@@ -18,6 +18,7 @@ import {
 import { createTextPost, createImagePost } from "../../linkedin/post";
 import { updateAllAnalytics } from "../../linkedin/analytics";
 import { config } from "../../config";
+import { notifyPostPublished } from "../../notifications/slack";
 
 const router = Router();
 
@@ -139,6 +140,7 @@ router.post("/api/drafts/:id/approve", async (req: Request, res: Response) => {
       }
 
       await markPostPublished(id, linkedinPostId);
+      await notifyPostPublished(id, linkedinPostId);
       res.json({ success: true, published: true, linkedinPostId });
       return;
     }

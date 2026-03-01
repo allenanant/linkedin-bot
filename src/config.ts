@@ -41,6 +41,10 @@ export const config = {
   dashboard: {
     port: parseInt(optional("DASHBOARD_PORT", "3000"), 10),
   },
+  slack: {
+    webhookUrl: process.env.SLACK_WEBHOOK_URL || "",
+    dashboardUrl: process.env.DASHBOARD_URL || "",
+  },
   paths: {
     db: path.resolve(__dirname, "../data/posts.db"),
     images: path.resolve(__dirname, "../data/images"),

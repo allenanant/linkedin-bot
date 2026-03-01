@@ -9,6 +9,7 @@ import { createTextPost, createImagePost } from "./linkedin/post";
 import { updateAllAnalytics } from "./linkedin/analytics";
 import { initDb, savePost, markPostPublished, getTodayPostCount, saveResearchCache, getApprovedPosts, getPostImage } from "./storage/db";
 import { scheduleDailyJob } from "./scheduler/cron";
+import { notifyDraftReady, notifyPostPublished, notifyPipelineError } from "./notifications/slack";
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
@@ -57,6 +58,7 @@ async function publishApprovedPosts() {
       }
       await markPostPublished(post.id, linkedinPostId);
       log(`Published approved post #${post.id}: ${linkedinPostId}`);
+      await notifyPostPublished(post.id, linkedinPostId);
     } catch (err: any) {
       log(`Failed to publish approved post #${post.id}: ${err.message}`);
     }
@@ -118,6 +120,14 @@ async function runDailyPipeline() {
     });
     log(`Saved post #${postId} as draft. Review and publish from the dashboard.`);
 
+    // Step 7: Notify via Slack
+    await notifyDraftReady({
+      postId,
+      content: generated.content,
+      hasImage: !!imagePath,
+      topic: generated.topic,
+    });
+
     // Step 8: Update analytics for previous posts
     log("Updating analytics for recent posts...");
     await updateAllAnalytics(config.linkedin.accessToken);
@@ -126,6 +136,7 @@ async function runDailyPipeline() {
   } catch (err: any) {
     log(`ERROR: ${err.message}`);
     console.error(err);
+    await notifyPipelineError(err.message);
   }
 }
 
