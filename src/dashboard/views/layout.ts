@@ -18,6 +18,8 @@ export function layout(title: string, content: string, activePage: string): stri
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${escapeHtml(title)} - LinkedIn Bot Dashboard</title>
+  <link rel="icon" type="image/png" href="/public/logo.png">
+  <link rel="apple-touch-icon" href="/public/logo.png">
   <link rel="stylesheet" href="/public/style.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
@@ -25,7 +27,10 @@ export function layout(title: string, content: string, activePage: string): stri
   <div class="app-layout">
     <aside class="sidebar">
       <div class="sidebar-header">
-        <h1 class="sidebar-logo">LI Bot</h1>
+        <div class="sidebar-brand">
+          <img src="/public/logo.png" alt="Logo" class="sidebar-logo-img">
+          <h1 class="sidebar-logo">LI Bot</h1>
+        </div>
         <span class="sidebar-subtitle">Dashboard</span>
       </div>
       <nav class="sidebar-nav">
