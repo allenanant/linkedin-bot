@@ -14,5 +14,5 @@ COPY . .
 # Create data and logs directories
 RUN mkdir -p data data/images logs
 
-# Start the scheduler
-CMD ["npx", "tsx", "src/index.ts", "schedule"]
+# Run the pipeline once (Render cron handles scheduling)
+CMD ["npx", "tsx", "src/index.ts", "run"]
