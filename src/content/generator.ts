@@ -252,36 +252,43 @@ function stripMarkdown(text: string): string {
 
 async function generateImagePrompt(post: string, topic: string): Promise<string> {
   // Extract the main headline and key points from the post for the image
-  const extractPrompt = `From this LinkedIn post, extract:
-1. A short punchy headline (3-6 words max)
-2. A one-line subtitle
-3. Exactly 4 short bullet points (3-5 words each)
+  const extractPrompt = `From this LinkedIn post, extract VERY SHORT text for an image:
 
 POST:
 ${post}
 
+RULES:
+- HEADLINE must be 3-5 words MAXIMUM. Like a book title.
+- SUBTITLE must be under 8 words. One short phrase.
+- Each POINT must be EXACTLY 2-4 words. NO full sentences. NO colons. NO explanations.
+  Good examples: "Set spending limits", "Filter sensitive data", "Track AI costs", "Automate reports"
+  Bad examples: "Stop Budget Bleed Cold: Identify inefficient AI spend" (TOO LONG)
+
 Respond in this EXACT format:
-HEADLINE: [headline]
-SUBTITLE: [subtitle]
-POINT1: [point]
-POINT2: [point]
-POINT3: [point]
-POINT4: [point]`;
+HEADLINE: [3-5 words]
+SUBTITLE: [under 8 words]
+POINT1: [2-4 words]
+POINT2: [2-4 words]
+POINT3: [2-4 words]
+POINT4: [2-4 words]`;
 
   const extracted = await callGemini(extractPrompt);
 
   // Parse the extracted content
   const headlineMatch = extracted.match(/HEADLINE:\s*(.+)/);
   const subtitleMatch = extracted.match(/SUBTITLE:\s*(.+)/);
-  const points = [];
+  const points: string[] = [];
   for (let i = 1; i <= 4; i++) {
     const m = extracted.match(new RegExp(`POINT${i}:\\s*(.+)`));
-    if (m) points.push(m[1].trim());
+    if (m) {
+      // Force truncate to max 5 words as safety net
+      const words = m[1].trim().split(/\s+/).slice(0, 5).join(" ");
+      points.push(words);
+    }
   }
 
-  const headline = headlineMatch?.[1]?.trim() || topic.slice(0, 30);
-  const subtitle = subtitleMatch?.[1]?.trim() || "A practical framework";
-  const pointsList = points.length > 0 ? points.join(", ") : "Step 1, Step 2, Step 3, Step 4";
+  const headline = headlineMatch?.[1]?.trim().split(/\s+/).slice(0, 6).join(" ") || topic.slice(0, 30);
+  const subtitle = subtitleMatch?.[1]?.trim().split(/\s+/).slice(0, 8).join(" ") || "A practical framework";
 
   // Build a very specific Notion-style mockup prompt
   const imagePrompt = `Create a screenshot mockup of a Notion-style productivity app page. The image should look EXACTLY like a real macOS app window screenshot:
