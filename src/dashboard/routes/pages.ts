@@ -21,16 +21,27 @@ function paramStr(val: string | string[] | undefined): string {
   return val || "";
 }
 
+// Helper to get draft count for sidebar badge
+async function getDraftCount(): Promise<number> {
+  try {
+    const drafts = await getDraftPosts();
+    return drafts.length;
+  } catch {
+    return 0;
+  }
+}
+
 // GET / - Overview page
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const [overview, changes, timeline, tip] = await Promise.all([
+    const [overview, changes, timeline, tip, draftCount] = await Promise.all([
       getAggregateAnalytics(7),
       getWeeklyComparison(),
       getTimelineData(30),
       getLatestTip(),
+      getDraftCount(),
     ]);
-    const html = homePage(overview, changes, timeline, timeline, tip);
+    const html = homePage(overview, changes, timeline, timeline, tip, { draftCount });
     res.send(html);
   } catch (err) {
     console.error("Error rendering overview:", err);
@@ -44,8 +55,11 @@ router.get("/posts", async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = 20;
     const status = req.query.status as string | undefined;
-    const { posts, total } = await getAllPosts(page, limit, status);
-    const html = postsPage(posts, page, total, limit);
+    const [{ posts, total }, draftCount] = await Promise.all([
+      getAllPosts(page, limit, status),
+      getDraftCount(),
+    ]);
+    const html = postsPage(posts, page, total, limit, status, { draftCount });
     res.send(html);
   } catch (err) {
     console.error("Error rendering posts:", err);
@@ -61,13 +75,16 @@ router.get("/posts/:id", async (req: Request, res: Response) => {
       res.status(400).send("Invalid post ID");
       return;
     }
-    const post = await getPostById(id);
+    const [post, draftCount] = await Promise.all([
+      getPostById(id),
+      getDraftCount(),
+    ]);
     if (!post) {
       res.status(404).send("Post not found");
       return;
     }
     const analytics = await getAnalyticsForPost(id);
-    const html = postDetailPage(post, analytics);
+    const html = postDetailPage(post, analytics, { draftCount });
     res.send(html);
   } catch (err) {
     console.error("Error rendering post detail:", err);
@@ -79,7 +96,7 @@ router.get("/posts/:id", async (req: Request, res: Response) => {
 router.get("/drafts", async (_req: Request, res: Response) => {
   try {
     const drafts = await getDraftPosts();
-    const html = draftsPage(drafts);
+    const html = draftsPage(drafts, { draftCount: drafts.length });
     res.send(html);
   } catch (err) {
     console.error("Error rendering drafts:", err);

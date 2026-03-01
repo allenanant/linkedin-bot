@@ -32,49 +32,79 @@ interface Tip {
 }
 
 function changeIndicator(pct: number): string {
-  if (pct > 0) return `<span class="change change-up">+${pct}%</span>`;
-  if (pct < 0) return `<span class="change change-down">${pct}%</span>`;
-  return `<span class="change change-neutral">0%</span>`;
+  if (pct > 0) return `<span class="change change-up">&#9650; +${pct}%</span>`;
+  if (pct < 0) return `<span class="change change-down">&#9660; ${pct}%</span>`;
+  return `<span class="change change-neutral">&mdash; 0%</span>`;
 }
+
+const statIcons = {
+  posts: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+  likes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>`,
+  comments: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+  impressions: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
+};
 
 export function homePage(
   overview: OverviewData,
   changes: WeeklyChanges,
   timeline: TimelineEntry[],
   postsData: TimelineEntry[],
-  tip: Tip | null
+  tip: Tip | null,
+  meta?: { draftCount?: number }
 ): string {
   const tipHtml = tip
-    ? `<div class="tip-card">
-        <div class="tip-label">Daily AI Tip</div>
-        <p class="tip-content">${escapeHtml(tip.content)}</p>
-        <span class="tip-date">${new Date(tip.generated_at).toLocaleDateString()}</span>
+    ? `<div class="tip-card-wrapper">
+        <div class="tip-card">
+          <div class="tip-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <div class="tip-label">AI Insight</div>
+          </div>
+          <p class="tip-content">${escapeHtml(tip.content)}</p>
+          <span class="tip-date">${new Date(tip.generated_at).toLocaleDateString()}</span>
+        </div>
       </div>`
-    : `<div class="tip-card">
-        <div class="tip-label">Daily AI Tip</div>
-        <p class="tip-content">No tips generated yet. Tips are generated daily at 00:30 UTC.</p>
+    : `<div class="tip-card-wrapper">
+        <div class="tip-card">
+          <div class="tip-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            <div class="tip-label">AI Insight</div>
+          </div>
+          <p class="tip-content">No tips generated yet. Tips are generated daily at 00:30 UTC.</p>
+        </div>
       </div>`;
 
   const content = `
     <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-label">Total Posts</div>
-        <div class="stat-value">${overview.postCount}</div>
-        <div class="stat-meta">${overview.imagePostCount} image / ${overview.textPostCount} text</div>
+      <div class="stat-card" data-accent="blue">
+        <div class="stat-card-header">
+          <div class="stat-label">Total Posts</div>
+          <div class="stat-icon" style="color: var(--accent-blue)">${statIcons.posts}</div>
+        </div>
+        <div class="stat-value" data-count-to="${overview.postCount}">${overview.postCount}</div>
+        <div class="stat-meta">${overview.imagePostCount} image &middot; ${overview.textPostCount} text</div>
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Likes</div>
-        <div class="stat-value">${overview.totalLikes.toLocaleString()}</div>
+      <div class="stat-card" data-accent="green">
+        <div class="stat-card-header">
+          <div class="stat-label">Total Likes</div>
+          <div class="stat-icon" style="color: var(--accent-green)">${statIcons.likes}</div>
+        </div>
+        <div class="stat-value" data-count-to="${overview.totalLikes}">${overview.totalLikes.toLocaleString()}</div>
         ${changeIndicator(changes.likesChange)}
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Comments</div>
-        <div class="stat-value">${overview.totalComments.toLocaleString()}</div>
+      <div class="stat-card" data-accent="purple">
+        <div class="stat-card-header">
+          <div class="stat-label">Total Comments</div>
+          <div class="stat-icon" style="color: var(--accent-purple)">${statIcons.comments}</div>
+        </div>
+        <div class="stat-value" data-count-to="${overview.totalComments}">${overview.totalComments.toLocaleString()}</div>
         ${changeIndicator(changes.commentsChange)}
       </div>
-      <div class="stat-card">
-        <div class="stat-label">Total Impressions</div>
-        <div class="stat-value">${overview.totalImpressions.toLocaleString()}</div>
+      <div class="stat-card" data-accent="teal">
+        <div class="stat-card-header">
+          <div class="stat-label">Total Impressions</div>
+          <div class="stat-icon" style="color: var(--accent-teal)">${statIcons.impressions}</div>
+        </div>
+        <div class="stat-value" data-count-to="${overview.totalImpressions}">${overview.totalImpressions.toLocaleString()}</div>
         ${changeIndicator(changes.impressionsChange)}
       </div>
     </div>
@@ -102,7 +132,7 @@ export function homePage(
     </script>
   `;
 
-  return layout("Overview", content, "overview");
+  return layout("Overview", content, "overview", meta);
 }
 
 function escapeHtml(str: string): string {
