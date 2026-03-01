@@ -105,12 +105,21 @@ STRICT FORMAT RULES (follow these EXACTLY):
 - Every single line should be its own sentence. One line = one thought. No paragraphs.
 - Use line breaks aggressively. White space is your friend.
 - Start with a bold hook that makes business owners stop scrolling
-- Use numbered lists (1. 2. 3.) or arrow lists (↳) for actionable steps
+- Use numbered lists (1. 2. 3.) or arrow symbols (↳) for actionable steps
 - Short punchy sentences. 5-12 words per line.
 - ALWAYS end with: "1. Connect with me (so I can DM you) 2. Comment '[KEYWORD]' and I'll send you [something valuable]."
 - Use keywords like 'GROWTH', 'MARKETING', 'AI', 'SALES', 'STRATEGY', 'LEADS', 'REVENUE'
 - NO hashtags ever.
 - 200-400 words per variation.
+
+CRITICAL LINKEDIN FORMATTING RULES:
+- NEVER use indentation or leading spaces on ANY line. Every line must start at the left margin.
+- NEVER use tab characters.
+- For numbered lists with sub-points, put each sub-point on its own line WITHOUT indentation.
+- Use "1." not "1.  " (single space after the period, never double).
+- NEVER use parentheses () anywhere in the post. LinkedIn truncates posts that contain parentheses. Instead of "Protect Data (For Real)" write "Protect Data. For Real."
+- Use only plain double quotes " not smart/curly quotes.
+- Use only plain single quotes ' not smart/curly quotes.
 
 TONE RULES:
 - Write like you're texting a smart business friend
@@ -228,6 +237,10 @@ CHECK ALL OF THESE:
 11. Is there any corporate buzzword language?
 12. Would a business owner find this valuable?
 13. CRITICAL: Remove ALL markdown formatting. No **bold**, no *italic*, no #headers, no [links](). LinkedIn does NOT support markdown. Use PLAIN TEXT ONLY.
+14. CRITICAL: Does ANY line start with spaces, tabs, or indentation? REMOVE ALL leading whitespace. Every single line MUST start at the left margin with no spaces before it. LinkedIn SILENTLY TRUNCATES posts with indented lines.
+15. Are there double spaces after numbers like "1.  "? Change to single space "1. ".
+16. CRITICAL: Are there ANY parentheses () ANYWHERE in the post? Remove ALL parentheses. LinkedIn TRUNCATES posts containing parentheses. Replace "something (detail)" with "something. detail" or "something - detail".
+17. Are there smart/curly quotes? Replace with plain quotes.
 
 If ANYTHING needs fixing, fix it. Return the final clean version.
 
@@ -246,6 +259,34 @@ function stripMarkdown(text: string): string {
     .replace(/^#{1,6}\s+/gm, "")        // # headers → plain text
     .replace(/\[(.+?)\]\(.+?\)/g, "$1") // [text](url) → text
     .replace(/`(.+?)`/g, "$1");         // `code` → code
+}
+
+// LinkedIn SILENTLY TRUNCATES posts that contain parentheses or indented lines.
+// This function strips all problematic formatting.
+export function cleanForLinkedIn(text: string): string {
+  return text
+    // Strip markdown first
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/_(.+?)_/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    // Remove ALL leading whitespace from every line (tabs, spaces)
+    .replace(/^[ \t]+/gm, "")
+    // Fix double spaces after numbers: "1.  " → "1. "
+    .replace(/^(\d+\.)\s{2,}/gm, "$1 ")
+    // CRITICAL: Remove parentheses — LinkedIn truncates at ( characters
+    .replace(/\(([^)]*)\)/g, "$1")
+    // Replace smart/curly quotes with plain quotes
+    .replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u201C\u201D]/g, '"')
+    // Remove em-dashes
+    .replace(/\u2014/g, ".")
+    // Collapse 3+ consecutive newlines into 2
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 // ─── Step 8: Generate image prompt ───
@@ -354,7 +395,10 @@ export async function generateLinkedInPost(
 
   // Step 7: Final quality review
   console.log("  [7/7] Quality review...");
-  const finalPost = await qualityReview(bestPost, topic);
+  const reviewedPost = await qualityReview(bestPost, topic);
+
+  // Step 8: Code-level safety net — clean for LinkedIn
+  const finalPost = cleanForLinkedIn(reviewedPost);
 
   // Generate image prompt
   let imagePrompt: string | null = null;
