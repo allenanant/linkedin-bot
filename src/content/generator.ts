@@ -227,12 +227,25 @@ CHECK ALL OF THESE:
 10. Do any consecutive lines start with the same word?
 11. Is there any corporate buzzword language?
 12. Would a business owner find this valuable?
+13. CRITICAL: Remove ALL markdown formatting. No **bold**, no *italic*, no #headers, no [links](). LinkedIn does NOT support markdown. Use PLAIN TEXT ONLY.
 
 If ANYTHING needs fixing, fix it. Return the final clean version.
 
 Respond with ONLY the final post text. No labels, no explanations.`;
 
-  return await callGemini(prompt);
+  const reviewed = await callGemini(prompt);
+  return stripMarkdown(reviewed);
+}
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "$1")   // **bold** → bold
+    .replace(/\*(.+?)\*/g, "$1")        // *italic* → italic
+    .replace(/__(.+?)__/g, "$1")        // __bold__ → bold
+    .replace(/_(.+?)_/g, "$1")          // _italic_ → italic
+    .replace(/^#{1,6}\s+/gm, "")        // # headers → plain text
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1") // [text](url) → text
+    .replace(/`(.+?)`/g, "$1");         // `code` → code
 }
 
 // ─── Step 8: Generate image prompt ───
