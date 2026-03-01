@@ -52,5 +52,6 @@ export async function generateImage(prompt: string): Promise<string | null> {
 }
 
 export function shouldGenerateImage(): boolean {
-  return Math.random() * 100 < config.bot.imagePostPercentage;
+  // Force image generation for testing — revert to: Math.random() * 100 < config.bot.imagePostPercentage
+  return true;
 }
