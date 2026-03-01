@@ -112,7 +112,16 @@ router.post("/api/drafts/:id/approve", async (req: Request, res: Response) => {
       }
 
       let linkedinPostId: string;
-      if (post.image_path) {
+      // Check for image data in DB first, then fall back to file path
+      const imageRecord = await getPostImage(id);
+      if (imageRecord && imageRecord.data) {
+        linkedinPostId = await createImagePost(
+          config.linkedin.accessToken,
+          config.linkedin.personUrn,
+          post.content,
+          imageRecord.data
+        );
+      } else if (post.image_path) {
         linkedinPostId = await createImagePost(
           config.linkedin.accessToken,
           config.linkedin.personUrn,

@@ -7,7 +7,7 @@ import { generateLinkedInPost, ResearchData } from "./content/generator";
 import { generateImage, shouldGenerateImage } from "./content/image-generator";
 import { createTextPost, createImagePost } from "./linkedin/post";
 import { updateAllAnalytics } from "./linkedin/analytics";
-import { initDb, savePost, markPostPublished, getTodayPostCount, saveResearchCache, getApprovedPosts } from "./storage/db";
+import { initDb, savePost, markPostPublished, getTodayPostCount, saveResearchCache, getApprovedPosts, getPostImage } from "./storage/db";
 import { scheduleDailyJob } from "./scheduler/cron";
 
 function log(msg: string) {
@@ -47,7 +47,10 @@ async function publishApprovedPosts() {
     try {
       log(`Publishing approved post #${post.id}...`);
       let linkedinPostId: string;
-      if (post.image_path) {
+      const imageRecord = await getPostImage(post.id);
+      if (imageRecord && imageRecord.data) {
+        linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, imageRecord.data);
+      } else if (post.image_path) {
         linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, post.image_path);
       } else {
         linkedinPostId = await createTextPost(config.linkedin.accessToken, config.linkedin.personUrn, post.content);

@@ -41,7 +41,7 @@ export async function createTextPost(
 export async function uploadImage(
   accessToken: string,
   personUrn: string,
-  imagePath: string
+  imageSource: string | Buffer
 ): Promise<string> {
   // Step 1: Initialize the upload
   const initResponse = await axios.post(
@@ -64,7 +64,9 @@ export async function uploadImage(
   const { uploadUrl, image: imageUrn } = initResponse.data.value;
 
   // Step 2: Upload the image binary
-  const imageBuffer = fs.readFileSync(imagePath);
+  const imageBuffer = Buffer.isBuffer(imageSource)
+    ? imageSource
+    : fs.readFileSync(imageSource);
   await axios.put(uploadUrl, imageBuffer, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
@@ -80,10 +82,10 @@ export async function createImagePost(
   accessToken: string,
   personUrn: string,
   text: string,
-  imagePath: string
+  imageSource: string | Buffer
 ): Promise<string> {
-  // Upload image first
-  const imageUrn = await uploadImage(accessToken, personUrn, imagePath);
+  // Upload image first (accepts file path or Buffer)
+  const imageUrn = await uploadImage(accessToken, personUrn, imageSource);
 
   const response = await axios.post(
     `${LINKEDIN_API}/rest/posts`,
