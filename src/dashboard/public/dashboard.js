@@ -488,6 +488,34 @@ function renderPostAnalyticsChart(data) {
   });
 }
 
+// ─── Refresh Analytics ───
+
+function refreshAnalytics() {
+  var btn = document.getElementById("refresh-analytics-btn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.innerHTML = '<svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refreshing&hellip;';
+
+  fetch("/api/analytics/refresh", { method: "POST" })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.success) {
+        showToast("Analytics refreshed from LinkedIn", "success");
+        // Reload page to show updated stats
+        setTimeout(function () { window.location.reload(); }, 1000);
+      } else {
+        showToast(data.error || "Failed to refresh analytics", "error");
+        btn.disabled = false;
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh';
+      }
+    })
+    .catch(function () {
+      showToast("Network error refreshing analytics", "error");
+      btn.disabled = false;
+      btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Refresh';
+    });
+}
+
 // ─── Draft Actions ───
 
 function saveDraft(id) {

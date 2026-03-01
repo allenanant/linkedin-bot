@@ -203,7 +203,7 @@ export async function getAnalyticsForPost(postId: number): Promise<any[]> {
   return result.rows;
 }
 
-export async function getAggregateAnalytics(days = 7): Promise<{
+export async function getAggregateAnalytics(days?: number): Promise<{
   postCount: number;
   totalLikes: number;
   totalComments: number;
@@ -212,6 +212,10 @@ export async function getAggregateAnalytics(days = 7): Promise<{
   imagePostCount: number;
   textPostCount: number;
 }> {
+  const dateFilter = days && days > 0
+    ? `AND p.posted_at >= NOW() - INTERVAL '${days} days'`
+    : "";
+
   const result = await pool.query(`
     SELECT
       COUNT(DISTINCT p.id) as post_count,
@@ -225,7 +229,7 @@ export async function getAggregateAnalytics(days = 7): Promise<{
     LEFT JOIN LATERAL (
       SELECT * FROM analytics WHERE post_id = p.id ORDER BY fetched_at DESC LIMIT 1
     ) a ON true
-    WHERE p.status = 'published' AND p.posted_at >= NOW() - INTERVAL '${days} days'
+    WHERE p.status = 'published' ${dateFilter}
   `);
   const r = result.rows[0];
   return {
@@ -237,6 +241,13 @@ export async function getAggregateAnalytics(days = 7): Promise<{
     imagePostCount: parseInt(r.image_post_count, 10),
     textPostCount: parseInt(r.text_post_count, 10),
   };
+}
+
+export async function getLastAnalyticsUpdate(): Promise<string | null> {
+  const result = await pool.query(
+    `SELECT fetched_at FROM analytics ORDER BY fetched_at DESC LIMIT 1`
+  );
+  return result.rows[0]?.fetched_at || null;
 }
 
 export async function getWeeklyComparison(): Promise<{

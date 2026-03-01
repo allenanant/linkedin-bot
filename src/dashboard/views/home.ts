@@ -50,7 +50,7 @@ export function homePage(
   timeline: TimelineEntry[],
   postsData: TimelineEntry[],
   tip: Tip | null,
-  meta?: { draftCount?: number }
+  meta?: { draftCount?: number; lastAnalyticsUpdate?: string | null }
 ): string {
   const tipHtml = tip
     ? `<div class="tip-card-wrapper">
@@ -73,7 +73,22 @@ export function homePage(
         </div>
       </div>`;
 
+  const lastUpdateStr = meta?.lastAnalyticsUpdate
+    ? `Updated ${new Date(meta.lastAnalyticsUpdate).toLocaleString()}`
+    : "No analytics fetched yet";
+
   const content = `
+    <div class="overview-toolbar">
+      <div class="overview-status">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span class="overview-last-update">${lastUpdateStr}</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" id="refresh-analytics-btn" onclick="refreshAnalytics()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Refresh
+      </button>
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card" data-accent="blue">
         <div class="stat-card-header">

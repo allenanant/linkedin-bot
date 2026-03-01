@@ -13,8 +13,10 @@ import {
   getAnalyticsForPost,
   getLatestTip,
   markPostPublished,
+  getLastAnalyticsUpdate,
 } from "../../storage/db";
 import { createTextPost, createImagePost } from "../../linkedin/post";
+import { updateAllAnalytics } from "../../linkedin/analytics";
 import { config } from "../../config";
 
 const router = Router();
@@ -219,6 +221,18 @@ router.get("/api/tip", async (_req: Request, res: Response) => {
   } catch (err) {
     console.error("Error fetching tip:", err);
     res.status(500).json({ error: "Failed to fetch tip" });
+  }
+});
+
+// POST /api/analytics/refresh — manually trigger analytics fetch from LinkedIn
+router.post("/api/analytics/refresh", async (_req: Request, res: Response) => {
+  try {
+    await updateAllAnalytics(config.linkedin.accessToken);
+    const lastUpdate = await getLastAnalyticsUpdate();
+    res.json({ success: true, lastUpdate });
+  } catch (err) {
+    console.error("Error refreshing analytics:", err);
+    res.status(500).json({ error: "Failed to refresh analytics" });
   }
 });
 

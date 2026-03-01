@@ -8,6 +8,7 @@ import {
   getTimelineData,
   getAnalyticsForPost,
   getLatestTip,
+  getLastAnalyticsUpdate,
 } from "../../storage/db";
 import { homePage } from "../views/home";
 import { postsPage } from "../views/posts";
@@ -34,14 +35,15 @@ async function getDraftCount(): Promise<number> {
 // GET / - Overview page
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const [overview, changes, timeline, tip, draftCount] = await Promise.all([
-      getAggregateAnalytics(7),
+    const [overview, changes, timeline, tip, draftCount, lastUpdate] = await Promise.all([
+      getAggregateAnalytics(),
       getWeeklyComparison(),
       getTimelineData(30),
       getLatestTip(),
       getDraftCount(),
+      getLastAnalyticsUpdate(),
     ]);
-    const html = homePage(overview, changes, timeline, timeline, tip, { draftCount });
+    const html = homePage(overview, changes, timeline, timeline, tip, { draftCount, lastAnalyticsUpdate: lastUpdate });
     res.send(html);
   } catch (err) {
     console.error("Error rendering overview:", err);
