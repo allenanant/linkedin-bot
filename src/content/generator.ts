@@ -35,7 +35,7 @@ FORMAT RULES:
 - Second line should add context or a "(here's why)" / "(save this)" style parenthetical
 - Use numbered lists (1. 2. 3.) or arrow lists (↳) for actionable steps
 - Use short punchy sentences. 5-12 words per line is ideal.
-- End with a call to action: "♻️ Repost this" or "Save this for later."
+- End with a call to action. When the post has an image, ALWAYS end with a comment CTA like: "Comment 'AI' and I'll send this to you" or "Drop a 🔥 below to get the free guide." When the post has no image, end with "♻️ Repost this if you found this useful." or "Save this for later."
 - NO hashtags. These creators never use hashtags.
 - 200-400 words total
 
@@ -93,7 +93,20 @@ ${recentTopics || "None yet"}
 
 Pick the most interesting, specific, and actionable topic from the research above. Write ONE focused post about it.
 
-${shouldIncludeImage ? "Also provide an IMAGE_PROMPT: a detailed description for generating a professional infographic-style image or clean visual that accompanies this post. Think: simple diagram, comparison chart, step-by-step visual, or bold text overlay on a clean background. NOT a generic stock photo." : ""}
+${shouldIncludeImage ? `Also provide an IMAGE_PROMPT for the freebie/resource teaser image.
+
+The image MUST look like a screenshot of an app, tool, dashboard, document, or workflow that the user would get as the freebie. It should feel like you're showing them a preview of the actual resource.
+
+IMAGE STYLE RULES:
+- Make it look like a real app/tool screenshot with a clean UI (sidebar navigation, content area, headings)
+- Use a minimal, modern design aesthetic (like Notion, Linear, or a clean SaaS dashboard)
+- Include a bold headline related to the post topic (e.g. "Viral Content Workflow", "AI Prompt Library", "Ad Copy Generator")
+- Include a subtitle or short description below the headline
+- Show a numbered list, workflow steps, or key features as content inside the "app"
+- Use a light or dark theme with clean typography
+- The image should make people WANT to comment to get this resource
+- NO stock photos. NO generic abstract graphics. It must look like a real product/tool/document screenshot.
+- Think: "What would this freebie actually look like if it were a real app or Notion doc?"` : ""}
 
 Respond in this EXACT format (no extra text outside this format):
 TOPIC: [brief topic description]
