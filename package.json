@@ -1,0 +1,39 @@
+{
+  "name": "linkedin-bot",
+  "version": "1.0.0",
+  "description": "Automated LinkedIn posting bot with AI content generation",
+  "main": "dist/index.js",
+  "scripts": {
+    "setup": "npx tsx scripts/setup-linkedin.ts",
+    "run": "npx tsx src/index.ts run",
+    "research": "npx tsx src/index.ts research",
+    "generate": "npx tsx src/index.ts generate",
+    "post": "npx tsx src/index.ts run",
+    "schedule": "npx tsx src/index.ts schedule",
+    "analytics": "npx tsx src/index.ts analytics",
+    "start": "npx tsx src/index.ts schedule",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.13.6",
+    "better-sqlite3": "^12.6.2",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "google-trends-api": "^4.9.2",
+    "node-cron": "^4.2.1",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
+    "@types/node": "^25.3.3",
+    "@types/node-cron": "^3.0.11",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
