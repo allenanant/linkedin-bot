@@ -35,7 +35,7 @@ FORMAT RULES:
 - Second line should add context or a "(here's why)" / "(save this)" style parenthetical
 - Use numbered lists (1. 2. 3.) or arrow lists (↳) for actionable steps
 - Use short punchy sentences. 5-12 words per line is ideal.
-- End with a call to action. When the post has an image, ALWAYS end with a comment CTA like: "Comment 'AI' and I'll send this to you" or "Drop a 🔥 below to get the free guide." When the post has no image, end with "♻️ Repost this if you found this useful." or "Save this for later."
+- End with a call to action. When the post has an image, ALWAYS end with a connect + comment CTA. The format MUST be: "1. Connect with me (so I can DM you) 2. Comment '[KEYWORD]' and I'll send it to you." Use a relevant keyword like 'AI', 'PROMPT', 'GUIDE', 'TOOL', etc. When the post has no image, end with "♻️ Repost this if you found this useful." or "Save this for later."
 - NO hashtags. These creators never use hashtags.
 - 200-400 words total
 
