@@ -238,33 +238,62 @@ Respond with ONLY the final post text. No labels, no explanations.`;
 // ─── Step 8: Generate image prompt ───
 
 async function generateImagePrompt(post: string, topic: string): Promise<string> {
-  const prompt = `Create an image generation prompt for a LinkedIn post visual.
+  // Extract the main headline and key points from the post for the image
+  const extractPrompt = `From this LinkedIn post, extract:
+1. A short punchy headline (3-6 words max)
+2. A one-line subtitle
+3. Exactly 4 short bullet points (3-5 words each)
 
-The post is about: "${topic}"
-
-POST CONTENT:
+POST:
 ${post}
 
-Create a prompt that will generate a CLEAN, PROFESSIONAL image like a Notion template or Canva design.
+Respond in this EXACT format:
+HEADLINE: [headline]
+SUBTITLE: [subtitle]
+POINT1: [point]
+POINT2: [point]
+POINT3: [point]
+POINT4: [point]`;
 
-IMAGE REQUIREMENTS:
-- Clean, minimal design on a soft gradient or solid background
-- Bold, readable typography as the main visual element
-- Include the key headline or main stat from the post as large text
-- 3-5 short bullet points or numbered steps as visual text overlays
-- Use modern, clean sans-serif fonts
-- Color palette: soft gradients (light purple to blue, or warm orange to pink, or dark navy to teal)
-- Include simple geometric shapes or subtle icons as decorative elements
-- Include "Allen Anant Thomas" as small branding text at the bottom
-- Layout should look like a professional marketing slide or infographic
-- NOT a stock photo. NOT a realistic scene. NOT AI-generated faces.
-- Think: Notion cover image, Canva template, modern presentation slide
-- Clean white or light text on gradient background
-- Professional and shareable. Something a business owner would save.
+  const extracted = await callGemini(extractPrompt);
 
-Respond with ONLY the image generation prompt. Nothing else.`;
+  // Parse the extracted content
+  const headlineMatch = extracted.match(/HEADLINE:\s*(.+)/);
+  const subtitleMatch = extracted.match(/SUBTITLE:\s*(.+)/);
+  const points = [];
+  for (let i = 1; i <= 4; i++) {
+    const m = extracted.match(new RegExp(`POINT${i}:\\s*(.+)`));
+    if (m) points.push(m[1].trim());
+  }
 
-  return await callGemini(prompt);
+  const headline = headlineMatch?.[1]?.trim() || topic.slice(0, 30);
+  const subtitle = subtitleMatch?.[1]?.trim() || "A practical framework";
+  const pointsList = points.length > 0 ? points.join(", ") : "Step 1, Step 2, Step 3, Step 4";
+
+  // Build a very specific Notion-style mockup prompt
+  const imagePrompt = `Create a screenshot mockup of a Notion-style productivity app page. The image should look EXACTLY like a real macOS app window screenshot:
+
+LAYOUT:
+- macOS window frame at the top with the three colored dots (red, yellow, green) in top-left corner
+- A clean LEFT SIDEBAR (light gray background, about 20% width) with 4-5 navigation items listed vertically using small icons and text labels like: "Content Strategy", "Projects", "Research", "Analytics", "${headline}"
+- The current page "${headline}" should be highlighted/active in the sidebar
+- MAIN CONTENT AREA (white background, 80% width) with:
+  - Large bold black headline text: "${headline}"
+  - Smaller gray subtitle text below: "${subtitle}"
+  - A numbered list with 4 items: 1. ${points[0] || "First step"} 2. ${points[1] || "Second step"} 3. ${points[2] || "Third step"} 4. ${points[3] || "Fourth step"}
+
+STYLE:
+- Clean, minimal, professional — looks like a real Notion page or productivity app
+- White main background, light gray sidebar
+- Black text, clean sans-serif typography (like Inter or SF Pro)
+- NO gradients, NO colorful backgrounds, NO decorative elements
+- NO AI-generated textures or patterns
+- Crisp, sharp, high contrast — like an actual app screenshot
+- The overall feel should be: clean, organized, professional tool
+- Think: Notion, Linear, or Obsidian page screenshot
+- Aspect ratio: landscape (16:9)`;
+
+  return imagePrompt;
 }
 
 // ─── Main: Multi-step content generation pipeline ───
