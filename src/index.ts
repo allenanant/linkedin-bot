@@ -70,6 +70,14 @@ async function runDailyPipeline() {
     if (includeImage && generated.imagePrompt) {
       log("Generating image with Gemini...");
       imagePath = await generateImage(generated.imagePrompt);
+      if (!imagePath) {
+        log("Image generation failed. Retrying once...");
+        imagePath = await generateImage(generated.imagePrompt);
+      }
+      if (!imagePath) {
+        log("Image generation failed twice. Skipping this post to avoid posting without image.");
+        return;
+      }
     }
 
     // Step 5: Save draft to database
