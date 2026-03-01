@@ -1,3 +1,4 @@
+import fs from "fs";
 import { config } from "./config";
 import { fetchTrendingTopics, fetchDailyTrends } from "./research/trending";
 import { fetchIndustryNews, fetchTopHeadlines } from "./research/news";
@@ -6,7 +7,7 @@ import { generateLinkedInPost, ResearchData } from "./content/generator";
 import { generateImage, shouldGenerateImage } from "./content/image-generator";
 import { createTextPost, createImagePost } from "./linkedin/post";
 import { updateAllAnalytics } from "./linkedin/analytics";
-import { savePost, markPostPublished, getTodayPostCount, saveResearchCache } from "./storage/db";
+import { initDb, savePost, markPostPublished, getTodayPostCount, saveResearchCache, getApprovedPosts } from "./storage/db";
 import { scheduleDailyJob } from "./scheduler/cron";
 
 function log(msg: string) {
@@ -34,18 +35,40 @@ async function runResearch(): Promise<ResearchData> {
     competitorMentions,
   };
 
-  saveResearchCache("daily", research);
+  await saveResearchCache("daily", research);
   log(`Research complete: ${trendingTopics.length} trends, ${allNews.length} articles, ${competitorMentions.length} competitor mentions`);
 
   return research;
 }
 
+async function publishApprovedPosts() {
+  const approved = await getApprovedPosts();
+  for (const post of approved) {
+    try {
+      log(`Publishing approved post #${post.id}...`);
+      let linkedinPostId: string;
+      if (post.image_path) {
+        linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, post.image_path);
+      } else {
+        linkedinPostId = await createTextPost(config.linkedin.accessToken, config.linkedin.personUrn, post.content);
+      }
+      await markPostPublished(post.id, linkedinPostId);
+      log(`Published approved post #${post.id}: ${linkedinPostId}`);
+    } catch (err: any) {
+      log(`Failed to publish approved post #${post.id}: ${err.message}`);
+    }
+  }
+}
+
 async function runDailyPipeline() {
   log("=== Starting daily LinkedIn pipeline ===");
 
+  await initDb();
+  await publishApprovedPosts();
+
   // Allow up to 2 posts per day
   const maxPostsPerDay = 2;
-  const todayCount = getTodayPostCount();
+  const todayCount = await getTodayPostCount();
   if (todayCount >= maxPostsPerDay) {
     log(`Already posted ${todayCount} time(s) today (max ${maxPostsPerDay}). Skipping.`);
     return;
@@ -80,17 +103,24 @@ async function runDailyPipeline() {
       }
     }
 
-    // Step 5: Save draft to database
-    const postId = savePost({
+    // Step 5: Read image data if present
+    let imageBuffer: Buffer | null = null;
+    if (imagePath) {
+      imageBuffer = fs.readFileSync(imagePath);
+    }
+
+    // Step 6: Save draft to database
+    const postId = await savePost({
       content: generated.content,
       imagePath: imagePath || undefined,
       imagePrompt: generated.imagePrompt || undefined,
       researchData: JSON.stringify(research),
       status: config.bot.autoPost ? "publishing" : "draft",
+      imageData: imageBuffer || undefined,
     });
     log(`Saved post #${postId} to database`);
 
-    // Step 6: Publish if auto-post is enabled
+    // Step 7: Publish if auto-post is enabled
     if (config.bot.autoPost) {
       log("Publishing to LinkedIn...");
       let linkedinPostId: string;
@@ -110,13 +140,13 @@ async function runDailyPipeline() {
         );
       }
 
-      markPostPublished(postId, linkedinPostId);
+      await markPostPublished(postId, linkedinPostId);
       log(`Published! LinkedIn post ID: ${linkedinPostId}`);
     } else {
       log("Draft saved. Review and publish manually.");
     }
 
-    // Step 7: Update analytics for previous posts
+    // Step 8: Update analytics for previous posts
     log("Updating analytics for recent posts...");
     await updateAllAnalytics(config.linkedin.accessToken);
 

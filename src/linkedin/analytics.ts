@@ -44,12 +44,12 @@ export async function fetchPostAnalytics(
 }
 
 export async function updateAllAnalytics(accessToken: string) {
-  const posts = getPostsWithLinkedinId();
+  const posts = await getPostsWithLinkedinId();
   console.log(`Fetching analytics for ${posts.length} recent posts...`);
 
   for (const post of posts) {
     const metrics = await fetchPostAnalytics(accessToken, post.linkedin_post_id);
-    saveAnalytics(post.id, metrics);
+    await saveAnalytics(post.id, metrics);
     console.log(
       `  Post #${post.id}: ${metrics.likes} likes, ${metrics.comments} comments, ${metrics.shares} shares, ${metrics.impressions} impressions`
     );

@@ -35,6 +35,12 @@ export const config = {
     imagePostPercentage: parseInt(optional("IMAGE_POST_PERCENTAGE", "40"), 10),
     autoPost: optional("AUTO_POST", "true") === "true",
   },
+  database: {
+    url: optional("DATABASE_URL", ""),
+  },
+  dashboard: {
+    port: parseInt(optional("DASHBOARD_PORT", "3000"), 10),
+  },
   paths: {
     db: path.resolve(__dirname, "../data/posts.db"),
     images: path.resolve(__dirname, "../data/images"),

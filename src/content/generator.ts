@@ -21,7 +21,7 @@ export async function generateLinkedInPost(
   research: ResearchData,
   shouldIncludeImage: boolean
 ): Promise<GeneratedPost> {
-  const recentPosts = getRecentPosts(5);
+  const recentPosts = await getRecentPosts(5);
   const recentTopics = recentPosts.map((p: any) => p.content?.slice(0, 100)).join("\n");
 
   const prompt = `You are writing a LinkedIn post for a professional in AI, SaaS, software, marketing, and ads.

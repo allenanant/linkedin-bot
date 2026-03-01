@@ -12,6 +12,7 @@
     "schedule": "npx tsx src/index.ts schedule",
     "analytics": "npx tsx src/index.ts analytics",
     "start": "npx tsx src/index.ts schedule",
+    "dashboard": "npx tsx src/dashboard/server.ts",
     "build": "tsc"
   },
   "keywords": [],
@@ -26,13 +27,15 @@
     "express": "^5.2.1",
     "google-trends-api": "^4.9.2",
     "node-cron": "^4.2.1",
-    "open": "^11.0.0"
+    "open": "^11.0.0",
+    "pg": "^8.19.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "@types/express": "^5.0.6",
     "@types/node": "^25.3.3",
     "@types/node-cron": "^3.0.11",
+    "@types/pg": "^8.18.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   }
