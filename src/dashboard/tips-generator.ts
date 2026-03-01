@@ -1,5 +1,5 @@
 import cron from "node-cron";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { config } from "../config";
 import {
   getAggregateAnalytics,
@@ -32,10 +32,12 @@ Week-over-week changes:
 
 Give ONE specific, actionable tip based on these numbers. Be concise and direct.`;
 
-    const genAI = new GoogleGenerativeAI(config.gemini.apiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    const result = await model.generateContent(prompt);
-    const tipContent = result.response.text();
+    const genAI = new GoogleGenAI({ apiKey: config.gemini.apiKey });
+    const result = await genAI.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+    });
+    const tipContent = result.text || "";
 
     const snapshot = { thisWeek, changes };
     await saveDailyTip(tipContent, snapshot);
