@@ -43,12 +43,14 @@ async function runResearch(): Promise<ResearchData> {
 async function runDailyPipeline() {
   log("=== Starting daily LinkedIn pipeline ===");
 
-  // Check if we already posted today
+  // Allow up to 2 posts per day
+  const maxPostsPerDay = 2;
   const todayCount = getTodayPostCount();
-  if (todayCount > 0) {
-    log(`Already posted ${todayCount} time(s) today. Skipping.`);
+  if (todayCount >= maxPostsPerDay) {
+    log(`Already posted ${todayCount} time(s) today (max ${maxPostsPerDay}). Skipping.`);
     return;
   }
+  log(`Post ${todayCount + 1} of ${maxPostsPerDay} for today.`);
 
   try {
     // Step 1: Research
