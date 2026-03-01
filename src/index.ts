@@ -79,18 +79,14 @@ async function runDailyPipeline() {
     // Step 1: Research
     const research = await runResearch();
 
-    // Step 2: Decide if this post gets an image
-    const includeImage = shouldGenerateImage();
-    log(`Post type: ${includeImage ? "with image" : "text only"}`);
-
-    // Step 3: Generate content
+    // Step 2: Generate content (always with image prompt)
     log("Generating post content with AI...");
-    const generated = await generateLinkedInPost(research, includeImage);
+    const generated = await generateLinkedInPost(research, true);
     log(`Generated post about: ${generated.topic}`);
 
-    // Step 4: Generate image if needed
+    // Step 3: Generate image (always)
     let imagePath: string | null = null;
-    if (includeImage && generated.imagePrompt) {
+    if (generated.imagePrompt) {
       log("Generating image with Gemini...");
       imagePath = await generateImage(generated.imagePrompt);
       if (!imagePath) {
@@ -98,8 +94,7 @@ async function runDailyPipeline() {
         imagePath = await generateImage(generated.imagePrompt);
       }
       if (!imagePath) {
-        log("Image generation failed twice. Skipping this post to avoid posting without image.");
-        return;
+        log("Image generation failed twice. Posting as text-only.");
       }
     }
 
@@ -115,36 +110,10 @@ async function runDailyPipeline() {
       imagePath: imagePath || undefined,
       imagePrompt: generated.imagePrompt || undefined,
       researchData: JSON.stringify(research),
-      status: config.bot.autoPost ? "publishing" : "draft",
+      status: "draft",
       imageData: imageBuffer || undefined,
     });
-    log(`Saved post #${postId} to database`);
-
-    // Step 7: Publish if auto-post is enabled
-    if (config.bot.autoPost) {
-      log("Publishing to LinkedIn...");
-      let linkedinPostId: string;
-
-      if (imagePath) {
-        linkedinPostId = await createImagePost(
-          config.linkedin.accessToken,
-          config.linkedin.personUrn,
-          generated.content,
-          imagePath
-        );
-      } else {
-        linkedinPostId = await createTextPost(
-          config.linkedin.accessToken,
-          config.linkedin.personUrn,
-          generated.content
-        );
-      }
-
-      await markPostPublished(postId, linkedinPostId);
-      log(`Published! LinkedIn post ID: ${linkedinPostId}`);
-    } else {
-      log("Draft saved. Review and publish manually.");
-    }
+    log(`Saved post #${postId} as draft. Review and publish from the dashboard.`);
 
     // Step 8: Update analytics for previous posts
     log("Updating analytics for recent posts...");

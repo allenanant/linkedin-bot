@@ -24,51 +24,60 @@ export async function generateLinkedInPost(
   const recentPosts = await getRecentPosts(5);
   const recentTopics = recentPosts.map((p: any) => p.content?.slice(0, 100)).join("\n");
 
-  const prompt = `You are writing a LinkedIn post for a professional in AI, SaaS, software, marketing, and ads.
+  const prompt = `You are writing a LinkedIn post for Allen Anant Thomas, a marketing professional and founder who helps businesses grow using AI-powered marketing strategies.
+
+AUDIENCE: Business owners, founders, marketers, and sales leaders who want practical ways to use AI to grow their business. NOT engineers. NOT developers. NOT technical people.
 
 Your writing style MUST follow these rules strictly:
 
 FORMAT RULES:
 - Every single line should be its own sentence. One line = one thought. No paragraphs.
 - Use line breaks aggressively. White space is your friend.
-- Start with a bold hook line that makes people stop scrolling (a claim, news, or contrarian take)
+- Start with a bold hook line that makes people stop scrolling (a business insight, marketing tip, or contrarian take about growth)
 - Second line should add context or a "(here's why)" / "(save this)" style parenthetical
 - Use numbered lists (1. 2. 3.) or arrow lists (↳) for actionable steps
 - Use short punchy sentences. 5-12 words per line is ideal.
-- End with a call to action. When the post has an image, ALWAYS end with a connect + comment CTA. The format MUST be: "1. Connect with me (so I can DM you) 2. Comment '[KEYWORD]' and I'll send it to you." Use a relevant keyword like 'AI', 'PROMPT', 'GUIDE', 'TOOL', etc. When the post has no image, end with "♻️ Repost this if you found this useful." or "Save this for later."
+- ALWAYS end with a connect + comment CTA: "1. Connect with me (so I can DM you) 2. Comment '[KEYWORD]' and I'll send you [something valuable]." Use keywords like 'GROWTH', 'MARKETING', 'AI', 'SALES', 'STRATEGY', etc.
 - NO hashtags. These creators never use hashtags.
 - 200-400 words total
 
 TONE RULES:
-- Write like you're texting a smart friend, not writing an essay
+- Write like you're texting a smart business friend, not writing an essay
 - Be direct. Be blunt. No fluff. No filler.
+- Sound like a marketing expert who understands business, NOT a tech nerd
 - Never use corporate buzzwords: "leverage", "synergy", "excited to announce", "thrilled", "game-changer"
 - Never use AI-sounding words: "delve", "landscape", "tapestry", "unleash", "harness", "paradigm", "robust"
 - Never start with "I'm excited" or "In today's fast-paced world" or similar cliches
-- Sound like a person who actually uses the tools, not someone reporting from the sideline
 - Use contractions. "It's" not "It is". "Don't" not "Do not".
 - Be opinionated. Take a stance. Don't hedge with "it depends."
 
-CONTENT RULES:
-- Focus on ONE specific tool, trend, or insight. Not a general overview.
-- Give actual step-by-step instructions people can follow RIGHT NOW
-- Include specific numbers, names, model versions when possible
-- If covering news: state what happened, why it matters, what to do about it
-- If giving tips: numbered steps someone can copy-paste and use today
-- If sharing an opinion: back it up with a specific example or comparison
+CONTENT RULES - THIS IS CRITICAL:
+- Focus on the BUSINESS VALUE of AI tools, not the technology itself
+- Frame everything around: revenue, leads, conversions, time saved, customer acquisition, marketing ROI
+- NEVER mention model names, version numbers, API details, or technical specs
+- NEVER discuss coding, programming, engineering concepts, or developer tools
+- NEVER talk about benchmarks, parameters, fine-tuning, or technical performance
+- Instead of "GPT-5 has 2T parameters" say "There's a new AI tool that writes your ad copy in 30 seconds"
+- Instead of "This framework orchestrates multi-agent workflows" say "This tool automates your entire marketing funnel"
+- Always tie back to: How does this help a business owner make more money, save time, or get more customers?
+- Give practical tips business owners can use TODAY without any technical knowledge
 - Rotate between these post types:
-  * "NEWS: [thing] just dropped. Here's what you need to know:" + numbered breakdown
-  * "How to [specific thing] with [specific tool]:" + step-by-step
-  * "Stop doing [common mistake]. Here's why:" + explanation + better alternative
-  * "[Tool A] vs [Tool B]. I tested both." + comparison with verdict
-  * "I just found [specific thing]. Most people are sleeping on this." + walkthrough
+  * "Most businesses waste money on [thing]. Here's what the smart ones do:" + tips
+  * "I helped a client [achieve result] using AI. Here's the exact process:" + steps
+  * "Stop doing [common marketing mistake]. Here's why it's killing your growth:" + alternative
+  * "[Number] ways AI is saving business owners [X] hours per week" + list
+  * "Your competitors are already using AI for [thing]. Here's how to catch up:" + actionable steps
+  * "The #1 reason your [ads/emails/content] aren't converting:" + fix
 
 WHAT TO NEVER DO:
+- NEVER write about technical AI topics (model architectures, APIs, code, frameworks)
+- NEVER mention specific model names or versions (GPT-4, Claude, Llama, etc.)
 - Never write long paragraphs. Ever. One line per thought.
-- Never be vague. "AI is changing everything" = bad. "Claude Opus 4.6 just outperformed GPT-5 on coding benchmarks" = good.
+- Never be vague. Give specific, actionable business advice.
 - Never write like a press release or a blog intro.
 - Never use em-dashes (—). Use periods instead.
 - Never start consecutive lines with the same word.
+- NEVER sound like an engineer or developer. Sound like a marketing strategist.
 
 TRENDING TOPICS:
 ${research.trendingTopics.map((t) => `- ${t.keyword}: ${t.relatedQueries.join(", ")}`).join("\n")}
@@ -93,26 +102,27 @@ ${recentTopics || "None yet"}
 
 Pick the most interesting, specific, and actionable topic from the research above. Write ONE focused post about it.
 
-${shouldIncludeImage ? `Also provide an IMAGE_PROMPT for the freebie/resource teaser image.
-
-The image MUST look like a screenshot of an app, tool, dashboard, document, or workflow that the user would get as the freebie. It should feel like you're showing them a preview of the actual resource.
+Also provide an IMAGE_PROMPT for an eye-catching visual to accompany this post.
 
 IMAGE STYLE RULES:
-- Make it look like a real app/tool screenshot with a clean UI (sidebar navigation, content area, headings)
-- Use a minimal, modern design aesthetic (like Notion, Linear, or a clean SaaS dashboard)
-- Include a bold headline related to the post topic (e.g. "Viral Content Workflow", "AI Prompt Library", "Ad Copy Generator")
-- Include a subtitle or short description below the headline
-- Show a numbered list, workflow steps, or key features as content inside the "app"
-- Use a light or dark theme with clean typography
-- The image should make people WANT to comment to get this resource
-- NO stock photos. NO generic abstract graphics. It must look like a real product/tool/document screenshot.
-- Think: "What would this freebie actually look like if it were a real app or Notion doc?"` : ""}
+- Create a clean, professional infographic or visual summary of the post's key points
+- Use bold typography with the main headline/stat from the post
+- Use a modern, minimal design with a dark or gradient background
+- Include 3-5 key bullet points or numbered steps as visual text overlays
+- Use icons or simple illustrations (NOT stock photos, NOT AI-generated faces)
+- Think: professional marketing slide, not a technical diagram
+- Color palette: modern blues, purples, or gradient backgrounds with white text
+- The image should work as a standalone visual that makes people stop scrolling
+- Include a subtle branding element like "Allen Anant Thomas" or a simple logo mark
+- NO code snippets, NO terminal screenshots, NO technical diagrams
+- Think: Canva-style marketing visual that a business owner would share
 
 Respond in this EXACT format (no extra text outside this format):
 TOPIC: [brief topic description]
 POST:
 [your LinkedIn post here]
-${shouldIncludeImage ? "IMAGE_PROMPT:\n[detailed image generation prompt]" : ""}`;
+IMAGE_PROMPT:
+[detailed image generation prompt]`;
 
   const text = await callGemini(prompt);
 
@@ -121,9 +131,9 @@ ${shouldIncludeImage ? "IMAGE_PROMPT:\n[detailed image generation prompt]" : ""}
   const imagePromptMatch = text.match(/IMAGE_PROMPT:\s*([\s\S]*?)$/);
 
   return {
-    topic: topicMatch?.[1]?.trim() || "Industry Insight",
+    topic: topicMatch?.[1]?.trim() || "Marketing Insight",
     content: postMatch?.[1]?.trim() || text.trim(),
-    imagePrompt: shouldIncludeImage ? imagePromptMatch?.[1]?.trim() || null : null,
+    imagePrompt: imagePromptMatch?.[1]?.trim() || null,
   };
 }
 

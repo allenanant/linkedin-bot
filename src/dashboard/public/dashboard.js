@@ -20,17 +20,21 @@ function showToast(message, type) {
 // ─── Chart Rendering ───
 
 var chartColors = {
-  blue: "rgba(59, 130, 246, 1)",
-  blueFade: "rgba(59, 130, 246, 0.1)",
-  green: "rgba(16, 185, 129, 1)",
-  greenFade: "rgba(16, 185, 129, 0.1)",
-  purple: "rgba(139, 92, 246, 1)",
-  purpleFade: "rgba(139, 92, 246, 0.1)",
-  orange: "rgba(245, 158, 11, 1)",
-  orangeFade: "rgba(245, 158, 11, 0.1)",
-  red: "rgba(239, 68, 68, 1)",
-  redFade: "rgba(239, 68, 68, 0.1)",
+  blue: "rgba(10, 132, 255, 1)",
+  blueFade: "rgba(10, 132, 255, 0.15)",
+  green: "rgba(48, 209, 88, 1)",
+  greenFade: "rgba(48, 209, 88, 0.15)",
+  purple: "rgba(191, 90, 242, 1)",
+  purpleFade: "rgba(191, 90, 242, 0.15)",
+  orange: "rgba(255, 214, 10, 1)",
+  orangeFade: "rgba(255, 214, 10, 0.15)",
+  red: "rgba(255, 69, 58, 1)",
+  redFade: "rgba(255, 69, 58, 0.15)",
 };
+
+// Dark theme for Chart.js
+Chart.defaults.color = "rgba(255, 255, 255, 0.45)";
+Chart.defaults.borderColor = "rgba(255, 255, 255, 0.06)";
 
 function renderTimelineChart(data) {
   var canvas = document.getElementById("timelineChart");
@@ -99,7 +103,7 @@ function renderTimelineChart(data) {
         y: {
           beginAtZero: true,
           position: "left",
-          grid: { color: "rgba(0,0,0,0.05)" },
+          grid: { color: "rgba(255,255,255,0.05)" },
           title: { display: true, text: "Likes / Comments" },
         },
         y1: {
@@ -161,7 +165,7 @@ function renderPostsChart(data) {
         },
         y: {
           beginAtZero: true,
-          grid: { color: "rgba(0,0,0,0.05)" },
+          grid: { color: "rgba(255,255,255,0.05)" },
         },
       },
     },
@@ -236,7 +240,7 @@ function renderPostAnalyticsChart(data) {
         y: {
           beginAtZero: true,
           position: "left",
-          grid: { color: "rgba(0,0,0,0.05)" },
+          grid: { color: "rgba(255,255,255,0.05)" },
         },
         y1: {
           beginAtZero: true,
