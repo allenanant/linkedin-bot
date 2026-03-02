@@ -41,6 +41,18 @@ export const config = {
   dashboard: {
     port: parseInt(optional("DASHBOARD_PORT", "3000"), 10),
   },
+  reddit: {
+    subreddits: optional("REDDIT_SUBREDDITS", "SaaS,marketing,artificial,webdev,entrepreneur,startups").split(",").map((s) => s.trim()),
+    postsPerSubreddit: parseInt(optional("REDDIT_POSTS_PER_SUB", "5"), 10),
+  },
+  youtube: {
+    apiKey: process.env.YOUTUBE_API_KEY || process.env.GEMINI_API_KEY || "",
+    videosPerKeyword: parseInt(optional("YOUTUBE_VIDEOS_PER_KEYWORD", "3"), 10),
+  },
+  socialSearch: {
+    apiKey: process.env.GOOGLE_SEARCH_API_KEY || "",
+    searchEngineId: process.env.GOOGLE_SEARCH_ENGINE_ID || "",
+  },
   slack: {
     webhookUrl: process.env.SLACK_WEBHOOK_URL || "",
     dashboardUrl: process.env.DASHBOARD_URL || "",

@@ -3,6 +3,9 @@ import { config } from "./config";
 import { fetchTrendingTopics, fetchDailyTrends } from "./research/trending";
 import { fetchIndustryNews, fetchTopHeadlines } from "./research/news";
 import { fetchCompetitorMentions } from "./research/competitors";
+import { fetchRedditDiscussions } from "./research/reddit";
+import { fetchYouTubeTopics } from "./research/youtube";
+import { fetchSocialSearchResults } from "./research/social-search";
 import { generateLinkedInPost, ResearchData } from "./content/generator";
 import { generateImage, shouldGenerateImage } from "./content/image-generator";
 import { createTextPost, createImagePost } from "./linkedin/post";
@@ -18,26 +21,44 @@ function log(msg: string) {
 async function runResearch(): Promise<ResearchData> {
   log("Starting research phase...");
 
-  const [trendingTopics, dailyTrends, newsArticles, headlines, competitorMentions] =
+  // Wrap each source in .catch() so one failure doesn't kill the pipeline
+  const safe = <T>(p: Promise<T>, name: string): Promise<T | []> =>
+    p.catch((err: any) => {
+      log(`WARNING: ${name} failed: ${err.message}`);
+      return [] as any;
+    });
+
+  const [trendingTopics, dailyTrends, newsArticles, headlines, competitorMentions, redditDiscussions, youtubeTopics, socialSearchResults] =
     await Promise.all([
-      fetchTrendingTopics(config.bot.industryKeywords),
-      fetchDailyTrends(),
-      fetchIndustryNews(config.newsApi.apiKey, config.bot.industryKeywords),
-      fetchTopHeadlines(config.newsApi.apiKey),
-      fetchCompetitorMentions(config.newsApi.apiKey),
+      safe(fetchTrendingTopics(config.bot.industryKeywords), "Google Trends"),
+      safe(fetchDailyTrends(), "Daily Trends"),
+      safe(fetchIndustryNews(config.newsApi.apiKey, config.bot.industryKeywords), "Industry News"),
+      safe(fetchTopHeadlines(config.newsApi.apiKey), "Headlines"),
+      safe(fetchCompetitorMentions(config.newsApi.apiKey), "Competitors"),
+      safe(fetchRedditDiscussions(config.reddit.subreddits, config.reddit.postsPerSubreddit), "Reddit"),
+      safe(fetchYouTubeTopics(config.youtube.apiKey, config.bot.industryKeywords, config.youtube.videosPerKeyword), "YouTube"),
+      safe(fetchSocialSearchResults(config.socialSearch.apiKey, config.socialSearch.searchEngineId, config.bot.industryKeywords), "Social Search"),
     ]);
 
-  const allNews = [...newsArticles, ...headlines];
+  const allNews = [...(newsArticles as any[] || []), ...(headlines as any[] || [])];
 
   const research: ResearchData = {
-    trendingTopics,
-    dailyTrends,
+    trendingTopics: trendingTopics as any || [],
+    dailyTrends: dailyTrends as any || [],
     newsArticles: allNews,
-    competitorMentions,
+    competitorMentions: competitorMentions as any || [],
+    redditDiscussions: redditDiscussions as any || [],
+    youtubeTopics: youtubeTopics as any || [],
+    socialSearchResults: socialSearchResults as any || [],
   };
 
   await saveResearchCache("daily", research);
-  log(`Research complete: ${trendingTopics.length} trends, ${allNews.length} articles, ${competitorMentions.length} competitor mentions`);
+  log(
+    `Research complete: ${(research.trendingTopics || []).length} trends, ${allNews.length} articles, ` +
+    `${(research.competitorMentions || []).length} competitor mentions, ` +
+    `${(research.redditDiscussions || []).length} Reddit posts, ` +
+    `${(research.youtubeTopics || []).length} YouTube videos`
+  );
 
   return research;
 }
@@ -148,10 +169,10 @@ switch (command) {
     runDailyPipeline();
     break;
   case "research":
-    runResearch().then((r) => console.log(JSON.stringify(r, null, 2)));
+    initDb().then(() => runResearch()).then((r) => console.log(JSON.stringify(r, null, 2)));
     break;
   case "generate":
-    runResearch()
+    initDb().then(() => runResearch())
       .then((r) => generateLinkedInPost(r, true))
       .then((p) => {
         console.log("\n--- Generated Post ---");

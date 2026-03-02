@@ -9,6 +9,9 @@ export interface ResearchData {
   dailyTrends: string[];
   newsArticles: { title: string; description: string; source: string }[];
   competitorMentions: { title: string; description: string; source: string }[];
+  redditDiscussions?: { title: string; selftext: string; score: number; numComments: number; subreddit: string; permalink: string; url: string }[];
+  youtubeTopics?: { title: string; channelName: string; viewCount: number; publishedAt: string; topComments: string[]; videoId: string }[];
+  socialSearchResults?: { title: string; snippet: string; link: string; source: "twitter" | "quora" }[];
 }
 
 export interface GeneratedPost {
@@ -20,11 +23,53 @@ export interface GeneratedPost {
 // ─── Step 1: Analyze research & find the best topic ───
 
 async function pickTopic(research: ResearchData, recentTopics: string): Promise<string> {
+  // Build Reddit section — highest-value signal for real pain points
+  const redditSection = research.redditDiscussions?.length
+    ? `\nREDDIT DISCUSSIONS — HIGHEST PRIORITY. These are REAL people asking REAL questions right now:
+${research.redditDiscussions
+  .slice(0, 10)
+  .map(
+    (r) =>
+      `- r/${r.subreddit} [${r.score} upvotes, ${r.numComments} comments]: "${r.title}"${
+        r.selftext ? `\n  Context: ${r.selftext.slice(0, 200)}` : ""
+      }`
+  )
+  .join("\n")}`
+    : "";
+
+  // Build YouTube section
+  const youtubeSection = research.youtubeTopics?.length
+    ? `\nYOUTUBE TRENDING — what people are watching and discussing RIGHT NOW:
+${research.youtubeTopics
+  .slice(0, 8)
+  .map(
+    (v) =>
+      `- "${v.title}" by ${v.channelName} [${formatViewCount(v.viewCount)} views]${
+        v.topComments.length
+          ? `\n  Top comments: ${v.topComments.slice(0, 3).map((c) => `"${c.slice(0, 100)}"`).join(" | ")}`
+          : ""
+      }`
+  )
+  .join("\n")}`
+    : "";
+
+  // Build social search section
+  const socialSection = research.socialSearchResults?.length
+    ? `\nTWITTER/QUORA DISCUSSIONS:
+${research.socialSearchResults
+  .slice(0, 5)
+  .map((s) => `- [${s.source}] "${s.title}": ${s.snippet.slice(0, 150)}`)
+  .join("\n")}`
+    : "";
+
   const prompt = `You are a LinkedIn content strategist for Allen Anant Thomas, who helps business owners grow using AI-powered marketing.
 
-AUDIENCE: Business owners, founders, marketers, and sales leaders.
+AUDIENCE: Business owners, founders, marketers, and sales leaders who have REAL problems they need solved.
 
-Look at this research data and pick the SINGLE most interesting topic for a LinkedIn post:
+Your job: Find the SINGLE most compelling topic for a LinkedIn post. The topic MUST be framed as a SOLUTION to a REAL PROBLEM that people are actively discussing online.
+${redditSection}
+${youtubeSection}
+${socialSection}
 
 TRENDING TOPICS:
 ${research.trendingTopics.map((t) => `- ${t.keyword}: ${t.relatedQueries.join(", ")}`).join("\n")}
@@ -41,15 +86,24 @@ ${research.competitorMentions.slice(0, 5).map((a) => `- ${a.title} (${a.source})
 AVOID THESE (already posted recently):
 ${recentTopics || "None yet"}
 
-RULES:
-- Pick a topic that business owners CARE about (revenue, leads, time savings, marketing ROI)
-- Frame it from a business angle, NOT a technology angle
-- The topic should be specific and actionable, not vague
-- If there's a new AI tool in the news, focus on what business problem it solves, not its technical specs
+TOPIC SELECTION RULES — follow this priority order:
+1. FIRST look at Reddit discussions. Find posts where people are asking questions, complaining about problems, or seeking advice. These are GOLD — they tell you exactly what people struggle with.
+2. THEN cross-reference with YouTube trends and comments. If Reddit users AND YouTube viewers are both talking about the same problem, that's your topic.
+3. News and Google Trends are supporting signals, not primary sources. Use them to add timeliness, not to pick the topic.
+4. The topic MUST be framed as: "Here's the problem people have -> here's the solution." NOT as "Here's a cool new technology."
+5. Pick something business owners CARE about: revenue, leads, time savings, marketing ROI, customer acquisition, operational efficiency.
+6. Be SPECIFIC. "How to use AI for marketing" is too vague. "Most SaaS founders waste $2K/month on ads that target the wrong audience — here's the 3-step fix" is specific.
+7. If a Reddit thread has high engagement — many upvotes and comments — that's a strong signal of a real pain point.
 
-Respond with ONLY the topic in 1-2 sentences. Nothing else.`;
+Respond with ONLY the topic in 1-2 sentences. Frame it as a problem + hint at the solution. Nothing else.`;
 
   return await callGemini(prompt);
+}
+
+function formatViewCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
+  return count.toString();
 }
 
 // ─── Step 2: Research similar high-performing posts ───
@@ -87,6 +141,8 @@ Now brainstorm:
 3. What's a surprising stat or insight that would make someone stop scrolling?
 4. What free resource could we offer in the CTA that people would actually want? (e.g., "Comment 'GROWTH' and I'll send you my exact ad copy template")
 5. What's the boldest, most attention-grabbing hook for this topic?
+6. If this topic was inspired by a Reddit discussion or YouTube comment, what specific angle from that discussion would resonate with LinkedIn's professional audience?
+7. What's a real-world example or case study that proves this solution works?
 
 Think like a marketer who understands business pain points. NOT like a tech writer.`;
 
