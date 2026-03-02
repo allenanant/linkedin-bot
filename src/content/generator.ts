@@ -20,7 +20,41 @@ export interface GeneratedPost {
   topic: string;
 }
 
-// ─── Step 1: Analyze research & find the best topic ───
+// ─── Step 1a: Pick a NEWS topic (AI in marketing news) ───
+
+async function pickNewsTopic(research: ResearchData, recentTopics: string): Promise<string> {
+  const prompt = `You are a LinkedIn content strategist for Allen Anant Thomas, who helps business owners grow using AI-powered marketing.
+
+Your job: Find the SINGLE most interesting and recent AI marketing news story to write a hot take about.
+
+RECENT NEWS:
+${research.newsArticles.slice(0, 10).map((a) => `- ${a.title} (${a.source}): ${a.description}`).join("\n")}
+
+TRENDING TOPICS:
+${research.trendingTopics.map((t) => `- ${t.keyword}: ${t.relatedQueries.join(", ")}`).join("\n")}
+
+DAILY TRENDS:
+${research.dailyTrends.join(", ")}
+
+INDUSTRY MENTIONS:
+${research.competitorMentions.slice(0, 5).map((a) => `- ${a.title} (${a.source}): ${a.description}`).join("\n")}
+
+AVOID THESE (already posted recently):
+${recentTopics || "None yet"}
+
+RULES:
+1. Pick a SPECIFIC recent news story about AI being used in marketing, advertising, sales, or business growth.
+2. Frame it as a hot take or opinion. Not just "here's what happened" but "here's what this MEANS for business owners."
+3. If there's no clear AI marketing news, pick the closest business/tech news and connect it to marketing.
+4. Be SPECIFIC. Name the company, tool, or development. Not vague "AI is changing marketing."
+5. The topic should make a business owner think "I need to read this to stay ahead."
+
+Respond with ONLY the topic in 1-2 sentences. Frame it as: what happened + your angle on why it matters. Nothing else.`;
+
+  return await callGemini(prompt);
+}
+
+// ─── Step 1b: Analyze research & find the best topic (freebie/default) ───
 
 async function pickTopic(research: ResearchData, recentTopics: string): Promise<string> {
   // Build Reddit section — highest-value signal for real pain points
@@ -413,18 +447,73 @@ STYLE:
   return imagePrompt;
 }
 
+// ─── Step 8b: Generate NEWS-style image prompt ───
+
+async function generateNewsImagePrompt(post: string, topic: string): Promise<string> {
+  const extractPrompt = `From this LinkedIn post about an AI marketing news story, extract VERY SHORT text for a news-style image:
+
+POST:
+${post}
+
+RULES:
+- HEADLINE must be 4-7 words MAXIMUM. Like a news headline.
+- SUBTITLE must be under 10 words. A brief supporting line.
+- CATEGORY should be 2-3 words like "AI MARKETING", "AD TECH", "MARTECH", "AI SALES", "GROWTH AI"
+
+Respond in this EXACT format:
+HEADLINE: [4-7 words]
+SUBTITLE: [under 10 words]
+CATEGORY: [2-3 words]`;
+
+  const extracted = await callGemini(extractPrompt);
+
+  const headlineMatch = extracted.match(/HEADLINE:\s*(.+)/);
+  const subtitleMatch = extracted.match(/SUBTITLE:\s*(.+)/);
+  const categoryMatch = extracted.match(/CATEGORY:\s*(.+)/);
+
+  const headline = headlineMatch?.[1]?.trim().split(/\s+/).slice(0, 8).join(" ") || topic.slice(0, 40);
+  const subtitle = subtitleMatch?.[1]?.trim().split(/\s+/).slice(0, 10).join(" ") || "What this means for your business";
+  const category = categoryMatch?.[1]?.trim().split(/\s+/).slice(0, 3).join(" ") || "AI MARKETING";
+
+  const imagePrompt = `Create a clean, modern news-style editorial card image. This should look like a premium tech news article thumbnail or a Bloomberg/TechCrunch headline card.
+
+LAYOUT:
+- Full width landscape image, 16:9 aspect ratio
+- A bold colored accent bar or gradient strip across the TOP of the image, about 15% height. Use a deep blue to teal gradient.
+- Inside the accent bar: small white text badge/label saying "${category}" in uppercase, clean sans-serif font
+- MAIN AREA below the accent bar: clean white or very light gray background
+- Large, bold, black headline text centered: "${headline}"
+- Smaller gray subtitle text below the headline: "${subtitle}"
+- At the bottom: a thin subtle line separator, then a small "thegrowthengine.net" watermark in light gray
+
+STYLE:
+- Clean, editorial, professional — like a premium news publication
+- NO photos, NO illustrations, NO icons, NO decorative elements
+- Typography-focused design. The text IS the design.
+- Modern sans-serif fonts like Inter, Helvetica, or SF Pro
+- High contrast: dark text on light background
+- The accent bar color should feel authoritative and tech-forward (deep blue, dark teal, or dark purple)
+- Minimal and sophisticated. Think: The Information, Bloomberg, or Stratechery visual style
+- Crisp and sharp, no gradients on the main area, no shadows on text`;
+
+  return imagePrompt;
+}
+
 // ─── Main: Multi-step content generation pipeline ───
 
 export async function generateLinkedInPost(
   research: ResearchData,
-  shouldIncludeImage: boolean
+  shouldIncludeImage: boolean,
+  postType: "news" | "freebie" = "freebie"
 ): Promise<GeneratedPost> {
   const recentPosts = await getRecentPosts(5);
   const recentTopics = recentPosts.map((p: any) => p.content?.slice(0, 100)).join("\n");
 
   // Step 1: Pick the best topic from research
-  console.log("  [1/7] Picking topic...");
-  const topic = await pickTopic(research, recentTopics);
+  console.log(`  [1/7] Picking topic (${postType} mode)...`);
+  const topic = postType === "news"
+    ? await pickNewsTopic(research, recentTopics)
+    : await pickTopic(research, recentTopics);
   console.log(`  Topic: ${topic}`);
 
   // Step 2: Research similar high-performing posts
@@ -456,11 +545,13 @@ export async function generateLinkedInPost(
   // Step 8: Code-level safety net — clean for LinkedIn
   const finalPost = cleanForLinkedIn(reviewedPost);
 
-  // Generate image prompt
+  // Generate image prompt (news gets news-style, freebie gets Notion-style)
   let imagePrompt: string | null = null;
   if (shouldIncludeImage) {
-    console.log("  Generating image prompt...");
-    imagePrompt = await generateImagePrompt(finalPost, topic);
+    console.log(`  Generating image prompt (${postType} template)...`);
+    imagePrompt = postType === "news"
+      ? await generateNewsImagePrompt(finalPost, topic)
+      : await generateImagePrompt(finalPost, topic);
   }
 
   return {

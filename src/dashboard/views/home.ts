@@ -89,6 +89,30 @@ export function homePage(
       </button>
     </div>
 
+    <div class="quick-actions">
+      <h3 class="quick-actions-title">Quick Actions</h3>
+      <div class="quick-actions-grid">
+        <button class="quick-action-btn quick-action-news" id="create-news-btn" onclick="createNewsPost()">
+          <div class="quick-action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
+          </div>
+          <div class="quick-action-text">
+            <span class="quick-action-label">Create News Post</span>
+            <span class="quick-action-desc">AI marketing hot take</span>
+          </div>
+        </button>
+        <button class="quick-action-btn quick-action-freebie" id="create-freebie-btn" onclick="createFreebiePost()">
+          <div class="quick-action-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+          </div>
+          <div class="quick-action-text">
+            <span class="quick-action-label">Create Freebie Post</span>
+            <span class="quick-action-desc">Reddit-sourced value post</span>
+          </div>
+        </button>
+      </div>
+    </div>
+
     <div class="stats-grid">
       <div class="stat-card" data-accent="blue">
         <div class="stat-card-header">

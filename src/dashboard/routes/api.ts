@@ -18,7 +18,11 @@ import {
 import { createTextPost, createImagePost } from "../../linkedin/post";
 import { updateAllAnalytics } from "../../linkedin/analytics";
 import { config } from "../../config";
-import { notifyPostPublished } from "../../notifications/slack";
+import { notifyPostPublished, notifyDraftReady } from "../../notifications/slack";
+import { runResearch } from "../../pipeline/research";
+import { generateLinkedInPost } from "../../content/generator";
+import { generateImage } from "../../content/image-generator";
+import fs from "fs";
 
 const router = Router();
 
@@ -223,6 +227,94 @@ router.get("/api/tip", async (_req: Request, res: Response) => {
   } catch (err) {
     console.error("Error fetching tip:", err);
     res.status(500).json({ error: "Failed to fetch tip" });
+  }
+});
+
+// POST /api/create/news — generate a news-style draft post on demand
+router.post("/api/create/news", async (_req: Request, res: Response) => {
+  try {
+    console.log("[Dashboard] Creating news post on demand...");
+    const research = await runResearch();
+    const generated = await generateLinkedInPost(research, true, "news");
+
+    let imagePath: string | null = null;
+    if (generated.imagePrompt) {
+      imagePath = await generateImage(generated.imagePrompt);
+      if (!imagePath) {
+        imagePath = await generateImage(generated.imagePrompt); // retry once
+      }
+    }
+
+    let imageBuffer: Buffer | null = null;
+    if (imagePath) {
+      imageBuffer = fs.readFileSync(imagePath);
+    }
+
+    const postId = await savePost({
+      content: generated.content,
+      imagePath: imagePath || undefined,
+      imagePrompt: generated.imagePrompt || undefined,
+      researchData: JSON.stringify(research),
+      status: "draft",
+      imageData: imageBuffer || undefined,
+    });
+
+    await notifyDraftReady({
+      postId,
+      content: generated.content,
+      hasImage: !!imagePath,
+      topic: generated.topic,
+    });
+
+    console.log(`[Dashboard] News post #${postId} created as draft.`);
+    res.json({ success: true, postId });
+  } catch (err: any) {
+    console.error("Error creating news post:", err);
+    res.status(500).json({ error: err.message || "Failed to create news post" });
+  }
+});
+
+// POST /api/create/freebie — generate a freebie-style draft post on demand
+router.post("/api/create/freebie", async (_req: Request, res: Response) => {
+  try {
+    console.log("[Dashboard] Creating freebie post on demand...");
+    const research = await runResearch();
+    const generated = await generateLinkedInPost(research, true, "freebie");
+
+    let imagePath: string | null = null;
+    if (generated.imagePrompt) {
+      imagePath = await generateImage(generated.imagePrompt);
+      if (!imagePath) {
+        imagePath = await generateImage(generated.imagePrompt); // retry once
+      }
+    }
+
+    let imageBuffer: Buffer | null = null;
+    if (imagePath) {
+      imageBuffer = fs.readFileSync(imagePath);
+    }
+
+    const postId = await savePost({
+      content: generated.content,
+      imagePath: imagePath || undefined,
+      imagePrompt: generated.imagePrompt || undefined,
+      researchData: JSON.stringify(research),
+      status: "draft",
+      imageData: imageBuffer || undefined,
+    });
+
+    await notifyDraftReady({
+      postId,
+      content: generated.content,
+      hasImage: !!imagePath,
+      topic: generated.topic,
+    });
+
+    console.log(`[Dashboard] Freebie post #${postId} created as draft.`);
+    res.json({ success: true, postId });
+  } catch (err: any) {
+    console.error("Error creating freebie post:", err);
+    res.status(500).json({ error: err.message || "Failed to create freebie post" });
   }
 });
 

@@ -516,6 +516,64 @@ function refreshAnalytics() {
     });
 }
 
+// ─── Quick Actions: Create Posts ───
+
+function createNewsPost() {
+  var btn = document.getElementById("create-news-btn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.querySelector(".quick-action-label").textContent = "Generating...";
+  btn.querySelector(".quick-action-desc").textContent = "This takes about 1 minute";
+
+  fetch("/api/create/news", { method: "POST" })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.success) {
+        showToast("News post draft created!", "success");
+        setTimeout(function () { window.location.href = "/drafts"; }, 1000);
+      } else {
+        showToast(data.error || "Failed to create news post", "error");
+        btn.disabled = false;
+        btn.querySelector(".quick-action-label").textContent = "Create News Post";
+        btn.querySelector(".quick-action-desc").textContent = "AI marketing hot take";
+      }
+    })
+    .catch(function () {
+      showToast("Network error creating news post", "error");
+      btn.disabled = false;
+      btn.querySelector(".quick-action-label").textContent = "Create News Post";
+      btn.querySelector(".quick-action-desc").textContent = "AI marketing hot take";
+    });
+}
+
+function createFreebiePost() {
+  var btn = document.getElementById("create-freebie-btn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.querySelector(".quick-action-label").textContent = "Generating...";
+  btn.querySelector(".quick-action-desc").textContent = "This takes about 1 minute";
+
+  fetch("/api/create/freebie", { method: "POST" })
+    .then(function (res) { return res.json(); })
+    .then(function (data) {
+      if (data.success) {
+        showToast("Freebie post draft created!", "success");
+        setTimeout(function () { window.location.href = "/drafts"; }, 1000);
+      } else {
+        showToast(data.error || "Failed to create freebie post", "error");
+        btn.disabled = false;
+        btn.querySelector(".quick-action-label").textContent = "Create Freebie Post";
+        btn.querySelector(".quick-action-desc").textContent = "Reddit-sourced value post";
+      }
+    })
+    .catch(function () {
+      showToast("Network error creating freebie post", "error");
+      btn.disabled = false;
+      btn.querySelector(".quick-action-label").textContent = "Create Freebie Post";
+      btn.querySelector(".quick-action-desc").textContent = "Reddit-sourced value post";
+    });
+}
+
 // ─── Draft Actions ───
 
 function saveDraft(id) {
