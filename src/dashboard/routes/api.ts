@@ -14,6 +14,7 @@ import {
   getLatestTip,
   markPostPublished,
   getLastAnalyticsUpdate,
+  savePost,
 } from "../../storage/db";
 import { createTextPost, createImagePost } from "../../linkedin/post";
 import { updateAllAnalytics } from "../../linkedin/analytics";
