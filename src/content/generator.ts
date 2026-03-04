@@ -633,7 +633,7 @@ export async function generateLinkedInPost(
 async function callGemini(prompt: string): Promise<string> {
   try {
     const response = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-2.5-pro",
       contents: prompt,
     });
 
