@@ -23,9 +23,9 @@ export interface GeneratedPost {
 // ─── Step 1a: Pick a NEWS topic (AI in marketing news) ───
 
 async function pickNewsTopic(research: ResearchData, recentTopics: string): Promise<string> {
-  const prompt = `You are a LinkedIn content strategist for Allen Anant Thomas, who helps business owners grow using AI-powered marketing.
+  const prompt = `You are picking a LinkedIn post topic for Allen Anant Thomas — founder of The Growth Engine, an AI-powered full-stack growth agency. Allen's brand is: bold, opinionated, data-backed, and anti-bullshit. He believes strategy is overrated, speed wins, and most marketers use AI to create garbage instead of using it as a weapon.
 
-Your job: Find the SINGLE most interesting and recent AI marketing news story to write a hot take about.
+Your job: Find the SINGLE most provocative AI marketing news story that Allen can write a HOT TAKE about.
 
 RECENT NEWS:
 ${research.newsArticles.slice(0, 10).map((a) => `- ${a.title} (${a.source}): ${a.description}`).join("\n")}
@@ -43,13 +43,13 @@ AVOID THESE (already posted recently):
 ${recentTopics || "None yet"}
 
 RULES:
-1. Pick a SPECIFIC recent news story about AI being used in marketing, advertising, sales, or business growth.
-2. Frame it as a hot take or opinion. Not just "here's what happened" but "here's what this MEANS for business owners."
-3. If there's no clear AI marketing news, pick the closest business/tech news and connect it to marketing.
-4. Be SPECIFIC. Name the company, tool, or development. Not vague "AI is changing marketing."
-5. The topic should make a business owner think "I need to read this to stay ahead."
+1. Pick a SPECIFIC news story. Name the company, tool, or event. No vague "AI is changing marketing."
+2. Frame it as a CONTRARIAN HOT TAKE. What does Allen think about this that would make people argue in the comments?
+3. The take should be bold enough to polarize — some people agree, some disagree. That's the goal.
+4. It should make a business owner stop scrolling and think "wait, what? I need to read this."
+5. If no clear AI marketing news exists, pick the closest tech/business story and connect it to marketing with a spicy angle.
 
-Respond with ONLY the topic in 1-2 sentences. Frame it as: what happened + your angle on why it matters. Nothing else.`;
+Respond with ONLY the topic in 1-2 sentences. Frame it as: what happened + Allen's contrarian take on it. Nothing else.`;
 
   return await callGemini(prompt);
 }
@@ -96,11 +96,16 @@ ${research.socialSearchResults
   .join("\n")}`
     : "";
 
-  const prompt = `You are a LinkedIn content strategist for Allen Anant Thomas, who helps business owners grow using AI-powered marketing.
+  const prompt = `You are picking a LinkedIn post topic for Allen Anant Thomas — founder of The Growth Engine, an AI-powered full-stack growth agency.
 
-AUDIENCE: Business owners, founders, marketers, and sales leaders who have REAL problems they need solved.
+ALLEN'S BRAND:
+- Bold, opinionated, anti-bullshit. Says what others won't.
+- Believes: strategy is overrated, speed wins, most marketers use AI wrong.
+- Audience: Business owners, founders, marketers who want REAL results, not theory.
+- Content style: Contrarian takes, tactical breakdowns, AI tips people can use TODAY.
+- Core belief: "Stop overthinking. Ship it. Test it. Fix it."
 
-Your job: Find the SINGLE most compelling topic for a LinkedIn post. The topic MUST be framed as a SOLUTION to a REAL PROBLEM that people are actively discussing online.
+Your job: Find the SINGLE most compelling topic for a LinkedIn post. The topic should make someone think "damn, I need to stop scrolling and read this."
 ${redditSection}
 ${youtubeSection}
 ${socialSection}
@@ -120,16 +125,18 @@ ${research.competitorMentions.slice(0, 5).map((a) => `- ${a.title} (${a.source})
 AVOID THESE (already posted recently):
 ${recentTopics || "None yet"}
 
-TOPIC SELECTION RULES — follow this priority order:
-1. FIRST look at Reddit discussions. Find posts where people are asking questions, complaining about problems, or seeking advice. These are GOLD — they tell you exactly what people struggle with.
-2. THEN cross-reference with YouTube trends and comments. If Reddit users AND YouTube viewers are both talking about the same problem, that's your topic.
-3. News and Google Trends are supporting signals, not primary sources. Use them to add timeliness, not to pick the topic.
-4. The topic MUST be framed as: "Here's the problem people have -> here's the solution." NOT as "Here's a cool new technology."
-5. Pick something business owners CARE about: revenue, leads, time savings, marketing ROI, customer acquisition, operational efficiency.
-6. Be SPECIFIC. "How to use AI for marketing" is too vague. "Most SaaS founders waste $2K/month on ads that target the wrong audience — here's the 3-step fix" is specific.
-7. If a Reddit thread has high engagement — many upvotes and comments — that's a strong signal of a real pain point.
+TOPIC SELECTION RULES:
+1. FIRST: Reddit discussions. Real people asking real questions = content gold. High upvotes + comments = validated pain point.
+2. SECOND: Cross-reference with YouTube and social. If multiple platforms discuss the same problem, that's your topic.
+3. The topic MUST fit one of these angles:
+   a. CONTRARIAN TAKE: Challenge something everyone believes. "Everyone says X. They're wrong. Here's why."
+   b. TACTICAL BREAKDOWN: A specific how-to that gives someone a result. Not theory. Steps they can do in 30 minutes.
+   c. AI TIP/HACK: A specific AI workflow, prompt, or tool that saves time or money. Something they can use TODAY.
+4. Be BRUTALLY SPECIFIC. Not "how to use AI for marketing." Instead: "I replaced my $3K/month copywriter with a 4-step AI workflow. Here's the exact process."
+5. The topic should either make people AGREE STRONGLY or DISAGREE STRONGLY. Lukewarm = no comments.
+6. Frame around business outcomes: revenue, leads, time saved, costs cut. Not features or technology.
 
-Respond with ONLY the topic in 1-2 sentences. Frame it as a problem + hint at the solution. Nothing else.`;
+Respond with ONLY the topic in 1-2 sentences. Include the angle — contrarian, tactical, or AI tip. Nothing else.`;
 
   return await callGemini(prompt);
 }
@@ -143,20 +150,22 @@ function formatViewCount(count: number): string {
 // ─── Step 2: Research similar high-performing posts ───
 
 async function researchSimilarPosts(topic: string): Promise<string> {
-  const prompt = `You are a LinkedIn content expert. I'm writing a post about: "${topic}"
+  const prompt = `You are a LinkedIn content researcher. I'm writing a post about: "${topic}"
 
-Research and describe 3 examples of high-performing LinkedIn posts on this topic or similar topics. For each, explain:
-1. What hook they used to grab attention
-2. What value they provided (frameworks, tips, stories, data points)
-3. What CTA they used
-4. Why it performed well (what made people engage)
+Study the patterns of top LinkedIn creators like Ruben Hassid, Ross Simmonds, Jasmin Alic, and Kevin Indig. Based on their style, describe 3 examples of how they would write a high-performing post on this topic:
+
+For each example:
+1. HOOK — the first 1-2 lines that make someone click "see more." Must be under 12 words. Use curiosity gap, contrarian statement, or bold claim.
+2. REHOOK — the line immediately after the hook that "slams the door" and removes any reason to scroll past.
+3. VALUE FORMAT — how they structure the meat: numbered tactical steps? data breakdown? story with a twist?
+4. CTA STYLE — how they drive comments without being cringe.
 
 Also identify:
-- What common patterns top creators use for this type of content
-- What kind of "lead magnet" or free resource would people want related to this topic
-- What contrarian or surprising angle would stand out
+- The most POLARIZING angle on this topic — what would make people argue in comments?
+- A specific, tangible freebie related to this topic — like an AI prompt pack, checklist, or framework — that people would comment a keyword to get
+- What data point or stat would make someone stop scrolling?
 
-Be specific. Give real patterns, not generic advice.`;
+Be specific and tactical. No generic "write engaging content" advice.`;
 
   return await callGemini(prompt);
 }
@@ -164,21 +173,39 @@ Be specific. Give real patterns, not generic advice.`;
 // ─── Step 3: Brainstorm value to provide ───
 
 async function brainstormValue(topic: string, similarPosts: string): Promise<string> {
-  const prompt = `You are brainstorming a LinkedIn post for Allen Anant Thomas about: "${topic}"
+  const prompt = `Brainstorming a LinkedIn post for Allen Anant Thomas about: "${topic}"
 
-Here's what similar successful posts look like:
+Allen's brand: Bold, anti-bullshit, speed-obsessed. Runs The Growth Engine — AI-powered growth agency. Believes overthinking kills businesses and AI is misused by 90% of marketers.
+
+Research on what works:
 ${similarPosts}
 
-Now brainstorm:
-1. What are 5 specific, actionable pieces of value we can give readers on this topic?
-2. What framework, checklist, or step-by-step process can we share?
-3. What's a surprising stat or insight that would make someone stop scrolling?
-4. What free resource could we offer in the CTA that people would actually want? (e.g., "Comment 'GROWTH' and I'll send you my exact ad copy template")
-5. What's the boldest, most attention-grabbing hook for this topic?
-6. If this topic was inspired by a Reddit discussion or YouTube comment, what specific angle from that discussion would resonate with LinkedIn's professional audience?
-7. What's a real-world example or case study that proves this solution works?
+Brainstorm these SPECIFIC things:
 
-Think like a marketer who understands business pain points. NOT like a tech writer.`;
+1. HOOKS — Write 5 different opening lines, each under 12 words. Types:
+   a. Contrarian: "Everyone says X. They're dead wrong."
+   b. Curiosity gap: "I found out why X fails. The reason is embarrassing."
+   c. Bold claim with a number: "I cut my client's ad spend by 60% with one AI prompt."
+   d. Pattern interrupt: Start mid-thought, mid-story, or with a provocative question.
+   e. Hot take: "Unpopular opinion: [something that'll make people angry]"
+
+2. REHOOK — For each hook, write the second line that makes it IMPOSSIBLE to scroll past. This line should either:
+   - Crush the reader's objection to keep reading
+   - Add a surprising twist to the hook
+   - Promise a specific, tangible outcome
+
+3. VALUE — What's the actual MEAT of the post? Pick ONE:
+   a. 3-5 tactical steps someone can do in 30 minutes
+   b. A specific AI prompt or workflow they can copy-paste
+   c. A data-backed breakdown that changes how they think
+   d. A short story with a twist and a lesson
+
+4. CTA — End with: "Comment '[KEYWORD]' and I'll send you my AI prompt pack for [specific use case related to the topic]"
+   Pick a punchy 1-word keyword like: PROMPTS, AI, SCALE, GROWTH, SPEED, LAUNCH
+
+5. SPICE — What opinion about this topic would get Allen the most comments? What would people ARGUE about?
+
+Think like a growth marketer who's built real campaigns. Not a content writer.`;
 
   return await callGemini(prompt);
 }
@@ -186,57 +213,77 @@ Think like a marketer who understands business pain points. NOT like a tech writ
 // ─── Step 4: Generate 3 post variations ───
 
 async function generateVariations(topic: string, valueIdeas: string): Promise<string> {
-  const prompt = `Write 3 different LinkedIn post variations about: "${topic}"
+  const prompt = `Write 3 LinkedIn post variations for Allen Anant Thomas about: "${topic}"
 
-Use these value ideas:
+Value ideas to use:
 ${valueIdeas}
 
-STRICT FORMAT RULES (follow these EXACTLY):
-- Every single line should be its own sentence. One line = one thought. No paragraphs.
-- Use line breaks aggressively. White space is your friend.
-- Start with a bold hook that makes business owners stop scrolling
-- Use numbered lists (1. 2. 3.) or arrow symbols (↳) for actionable steps
-- Short punchy sentences. 5-12 words per line.
-- ALWAYS end with: "1. Connect with me (so I can DM you) 2. Comment '[KEYWORD]' and I'll send you [something valuable]."
-- Use keywords like 'GROWTH', 'MARKETING', 'AI', 'SALES', 'STRATEGY', 'LEADS', 'REVENUE'
-- NO hashtags ever.
-- 200-400 words per variation.
+═══ ALLEN'S VOICE ═══
+Allen is the founder of The Growth Engine. He's bold, witty, and doesn't sugarcoat. He sounds like a smart friend who's built real campaigns, not a LinkedIn guru. He cusses occasionally. He's blunt. He takes stances. He makes you think "this guy actually knows what he's talking about."
 
-CRITICAL LINKEDIN FORMATTING RULES:
-- NEVER use indentation or leading spaces on ANY line. Every line must start at the left margin.
-- NEVER use tab characters.
-- For numbered lists with sub-points, put each sub-point on its own line WITHOUT indentation.
-- Use "1." not "1.  " (single space after the period, never double).
-- NEVER use parentheses () anywhere in the post. LinkedIn truncates posts that contain parentheses. Instead of "Protect Data (For Real)" write "Protect Data. For Real."
-- Use only plain double quotes " not smart/curly quotes.
-- Use only plain single quotes ' not smart/curly quotes.
+Sample of how Allen sounds:
+- "Stop strategizing. Start shipping. Your competitor already launched while you were on slide 47."
+- "Everyone's using AI to write more mediocre content faster. That's not innovation. That's just faster garbage."
+- "I replaced a $5K/month process with a 20-minute AI workflow. My client nearly cried."
 
-TONE RULES:
-- Write like you're texting a smart business friend
-- Be direct. Be blunt. No fluff.
-- Sound like a marketing expert, NOT a tech nerd
-- NEVER use: "leverage", "synergy", "excited to announce", "thrilled", "game-changer", "delve", "landscape", "tapestry", "unleash", "harness", "paradigm", "robust"
-- NEVER start with "I'm excited" or "In today's fast-paced world"
-- Use contractions. Be opinionated. Take a stance.
+═══ POST STRUCTURE — HOOK + REHOOK FORMAT ═══
+LinkedIn shows only 3 lines before "see more." Your ENTIRE value proposition lives there.
 
-CONTENT RULES:
-- Focus on BUSINESS VALUE: revenue, leads, conversions, time saved, customer acquisition
-- NEVER mention model names, version numbers, APIs, technical specs
-- NEVER discuss coding, programming, engineering, or developer tools
-- Give practical tips business owners can use TODAY
-- Frame AI as a business tool, like a marketing assistant, not as technology
+LINE 1 — THE HOOK: Under 12 words. Must create curiosity, make a bold claim, or say something contrarian. This line alone decides if someone reads or scrolls.
 
-Each variation should have a DIFFERENT hook, DIFFERENT angle, and DIFFERENT CTA keyword.
+LINE 2 — BLANK LINE
+
+LINE 3 — THE REHOOK: Slams the door behind the reader. Crushes their objection to keep reading. Adds a twist. Makes it IMPOSSIBLE to scroll past.
+
+LINE 4+ — THE MEAT: Deliver the actual value. Options:
+- 3-5 numbered tactical steps — each step is 1-2 SHORT lines
+- A specific AI prompt or workflow they can screenshot
+- A mini-story with a twist and lesson
+- A data breakdown that changes how they think
+
+LAST 3 LINES — THE CTA:
+"Comment '[KEYWORD]' and I'll send you my AI prompt pack for [specific thing related to the topic]."
+"Follow me for more AI marketing breakdowns."
+
+═══ FORMATTING RULES ═══
+- One thought per line. NEVER more than 15 words on a single line.
+- Aggressive line breaks. White space everywhere.
+- NO indentation. NO tabs. Every line starts at the left margin.
+- NO parentheses () anywhere. LinkedIn truncates them. Use periods instead.
+- NO hashtags. NO emojis in the first 3 lines.
+- NO markdown. Plain text only.
+- Single space after numbers: "1. " not "1.  "
+- Plain quotes only — no smart/curly quotes.
+- 150-300 words per variation. Tight. No filler.
+
+═══ BANNED WORDS ═══
+NEVER use: leverage, synergy, game-changer, delve, landscape, tapestry, unleash, harness, paradigm, robust, thrilled, excited to announce, in today's fast-paced world, buckle up, let that sink in, here's the thing, without further ado, at the end of the day
+
+═══ CONTENT RULES ═══
+- Business outcomes ONLY: revenue, leads, time saved, costs cut, conversions.
+- NO model names, version numbers, APIs, technical specs.
+- NO coding, programming, or developer stuff.
+- Every tip must be something they can DO today. Not theory.
+- AI = business weapon, not technology to geek out about.
+- Be SPECIFIC with numbers: "$3K saved", "47 minutes instead of 3 hours", "2x conversion rate"
+
+═══ WHAT MAKES A POST GET 100+ COMMENTS ═══
+- A bold opinion that people either love or hate
+- A specific result that makes people ask "how?"
+- A framework or prompt people want to screenshot
+- A CTA that asks for a comment keyword to get a freebie
+
+Each variation needs a DIFFERENT hook type, DIFFERENT angle, DIFFERENT CTA keyword.
 
 Format:
 VARIATION 1:
-[post content]
+[post]
 
 VARIATION 2:
-[post content]
+[post]
 
 VARIATION 3:
-[post content]`;
+[post]`;
 
   return await callGemini(prompt);
 }
@@ -244,25 +291,39 @@ VARIATION 3:
 // ─── Step 5: Humanize all variations ───
 
 async function humanizeVariations(variations: string): Promise<string> {
-  const prompt = `You are a professional editor. These 3 LinkedIn post drafts need to sound MORE HUMAN and LESS like AI wrote them.
+  const prompt = `You are Allen's editor. Allen Anant Thomas is a 20-something agency founder who's sharp, witty, and talks like a real person. NOT like a LinkedIn influencer. NOT like ChatGPT.
+
+Here are 3 LinkedIn post drafts that need to sound like Allen actually wrote them:
 
 ${variations}
 
-For each variation, make these improvements:
-1. Replace any remaining corporate/AI language with casual, direct language
-2. Add personal touches (e.g., "I tested this with a client last week" or "I've seen this mistake 100 times")
-3. Make the hook more conversational and punchy
-4. Ensure every line is SHORT (5-12 words). Break up any long sentences.
-5. Remove any words that feel like filler or fluff
-6. Make sure it doesn't start with a cliche
-7. The CTA at the end should feel natural, not forced
-8. Add a subtle personality — maybe a dash of humor or a bold opinion
-9. Make sure no two consecutive lines start with the same word
-10. Remove em-dashes (—) and replace with periods or line breaks
+═══ ALLEN'S VOICE CHECKLIST ═══
+Read each line out loud. If it sounds like a corporate blog post, rewrite it. Allen sounds like:
+- A smart friend explaining something over coffee
+- Someone who's done this stuff, not just read about it
+- Blunt but not mean. Confident but not arrogant.
+- Occasionally funny in a dry, witty way
 
-The goal: if someone reads this, they should think "this person actually talks like this" not "AI wrote this."
+═══ FIXES TO MAKE ═══
+1. Kill corporate speak. "Utilize" → "use". "Implement" → "do". "Optimize" → "fix".
+2. Add personal proof. "I tested this last week." "One of my clients tried this." "I've made this mistake."
+3. Make hooks SHORTER and PUNCHIER. If the hook is over 12 words, cut it.
+4. Every line: max 15 words. If longer, break it.
+5. No two consecutive lines should start with the same word.
+6. Remove ALL filler: "actually", "basically", "honestly", "literally", "just", "simply", "really" — unless it adds punch.
+7. Replace em-dashes with periods or line breaks.
+8. The CTA should feel like a casual offer, not a sales pitch. Like: "Want my AI prompt pack? Comment PROMPTS and I'll send it over."
+9. Add ONE moment of personality per post — a small joke, a bold opinion, or a relatable frustration.
+10. Check the first 3 lines. They must make someone NEED to click "see more." If they don't, rewrite them.
 
-Return all 3 humanized variations in the same format:
+═══ AI DETECTION ═══
+If ANY line sounds like it was written by AI, rewrite it. Common tells:
+- Starting with "In today's..." or "As a..."
+- Lists that all follow the same sentence structure
+- Overly balanced, diplomatic statements — Allen takes sides
+- Perfect grammar everywhere — real people use fragments
+
+Return all 3 humanized variations:
 VARIATION 1:
 [humanized post]
 
@@ -278,29 +339,31 @@ VARIATION 3:
 // ─── Step 6: Pick the best version ───
 
 async function pickBestVersion(humanizedVariations: string, topic: string): Promise<string> {
-  const prompt = `You are a LinkedIn content strategist. Review these 3 post variations and pick the BEST one:
+  const prompt = `Pick the BEST of these 3 LinkedIn posts and make it perfect:
 
 ${humanizedVariations}
 
-EVALUATION CRITERIA:
-1. Hook strength — will it make someone stop scrolling?
-2. Value density — does every line add value or move the reader forward?
-3. Human feel — does it sound like a real person wrote it?
-4. Specificity — are the tips concrete and actionable, not vague?
-5. CTA appeal — would someone actually comment the keyword?
-6. Flow — does it read smoothly from top to bottom?
-7. Business focus — is it framed around business outcomes, not technology?
+═══ SCORING — rank each post 1-10 on: ═══
+1. HOOK POWER: Would YOU stop scrolling? Is it under 12 words? Does it create a curiosity gap or make a bold claim?
+2. REHOOK: Does line 3 slam the door? Can you NOT scroll past?
+3. COMMENT MAGNET: Will this post make people ARGUE, ASK QUESTIONS, or SHARE? Lukewarm = 0 comments.
+4. VALUE DENSITY: Does every single line add value? Is there any filler?
+5. ALLEN'S VOICE: Does it sound like a bold, witty agency founder? Or like ChatGPT?
+6. SPECIFICITY: Are there real numbers, real steps, real examples? Or vague advice?
+7. CTA PULL: Would someone actually comment the keyword to get the freebie?
 
-Pick the best variation. Then improve it one final time:
-- Tighten the hook even more
-- Make sure every single line is punchy and adds value
-- Ensure the CTA feels natural and compelling
-- Check that it's 200-400 words
-- Make sure there are NO AI-sounding words
+═══ PICK THE WINNER AND POLISH IT ═══
+Take the best variation and make these final tweaks:
+- If the hook can be shorter, make it shorter
+- If any line is filler, delete it
+- If any line sounds like AI, rewrite it in Allen's voice
+- Make sure the post is 150-300 words. Tight. No padding.
+- The CTA should mention the AI prompt pack and feel casual
+- Add one moment of personality if missing — humor, frustration, or a bold opinion
 
 Respond in this format:
 BEST_POST:
-[the final, polished post content]`;
+[the final polished post]`;
 
   return await callGemini(prompt);
 }
@@ -308,31 +371,37 @@ BEST_POST:
 // ─── Step 7: Final quality review ───
 
 async function qualityReview(post: string, topic: string): Promise<string> {
-  const prompt = `You are doing a final quality review on this LinkedIn post before it goes live.
+  const prompt = `Final quality review before this LinkedIn post goes live. Fix any issues and return the clean version.
 
 POST:
 ${post}
 
-CHECK ALL OF THESE:
-1. Does every line have only ONE thought? (no run-on sentences)
-2. Are there any AI-sounding words? (delve, landscape, harness, unleash, robust, paradigm, synergy, leverage, tapestry, game-changer, thrilled, excited to announce) — REMOVE THEM
-3. Does it mention any model names, version numbers, APIs, or technical jargon? — REMOVE THEM
-4. Is the hook compelling enough to stop someone mid-scroll?
-5. Does it end with a clear CTA using Connect + Comment format?
-6. Is it between 200-400 words?
-7. Does it sound like a real marketing professional, not an AI?
-8. Is every tip/step specific and actionable?
-9. Are there any em-dashes (—)? Replace with periods.
-10. Do any consecutive lines start with the same word?
-11. Is there any corporate buzzword language?
-12. Would a business owner find this valuable?
-13. CRITICAL: Remove ALL markdown formatting. No **bold**, no *italic*, no #headers, no [links](). LinkedIn does NOT support markdown. Use PLAIN TEXT ONLY.
-14. CRITICAL: Does ANY line start with spaces, tabs, or indentation? REMOVE ALL leading whitespace. Every single line MUST start at the left margin with no spaces before it. LinkedIn SILENTLY TRUNCATES posts with indented lines.
-15. Are there double spaces after numbers like "1.  "? Change to single space "1. ".
-16. CRITICAL: Are there ANY parentheses () ANYWHERE in the post? Remove ALL parentheses. LinkedIn TRUNCATES posts containing parentheses. Replace "something (detail)" with "something. detail" or "something - detail".
-17. Are there smart/curly quotes? Replace with plain quotes.
+═══ FORMATTING CHECKS ═══
+1. Every line starts at the left margin? NO indentation, NO tabs, NO leading spaces.
+2. Every line has only ONE thought? Max 15 words per line.
+3. No markdown? No **bold**, no *italic*, no #headers, no [links]().
+4. No parentheses ()? LinkedIn truncates them. Replace with periods.
+5. No em-dashes? Replace with periods or line breaks.
+6. No double spaces after numbers? "1. " not "1.  "
+7. Plain quotes only? No smart/curly quotes.
+8. No 3+ consecutive blank lines? Max 2 blank lines between sections.
 
-If ANYTHING needs fixing, fix it. Return the final clean version.
+═══ VOICE CHECKS ═══
+9. AI words? REMOVE: delve, landscape, harness, unleash, robust, paradigm, synergy, leverage, tapestry, game-changer, thrilled, excited to announce, let that sink in, here's the thing, buckle up, without further ado, at the end of the day, navigate, elevate, foster, facilitate
+10. Does it sound like Allen? Bold, blunt, witty. NOT corporate. NOT ChatGPT.
+11. No two consecutive lines start with the same word?
+12. No model names, version numbers, APIs, or tech jargon?
+13. Is there at least one moment of personality — humor, opinion, or frustration?
+
+═══ STRUCTURE CHECKS ═══
+14. HOOK: Is line 1 under 12 words? Would YOU stop scrolling?
+15. REHOOK: Does line 3 make it impossible to scroll past?
+16. VALUE: Does every line in the middle add value? Cut any filler.
+17. CTA: Does it end with "Comment '[KEYWORD]' and I'll send you my AI prompt pack for [specific thing]"?
+18. LENGTH: 150-300 words? If over 300, cut the fat.
+
+═══ FINAL TEST ═══
+Read the post out loud. If any sentence sounds like a corporate blog, a motivational poster, or a ChatGPT response — rewrite it in Allen's voice.
 
 Respond with ONLY the final post text. No labels, no explanations.`;
 
