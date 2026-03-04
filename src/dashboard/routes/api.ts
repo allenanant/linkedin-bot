@@ -239,10 +239,10 @@ router.post("/api/create/news", async (_req: Request, res: Response) => {
     const generated = await generateLinkedInPost(research, true, "news");
 
     let imagePath: string | null = null;
-    if (generated.imagePrompt) {
-      imagePath = await generateImage(generated.imagePrompt);
+    if (generated.imageData) {
+      imagePath = await generateImage(generated.imageData);
       if (!imagePath) {
-        imagePath = await generateImage(generated.imagePrompt); // retry once
+        imagePath = await generateImage(generated.imageData); // retry once
       }
     }
 
@@ -254,7 +254,7 @@ router.post("/api/create/news", async (_req: Request, res: Response) => {
     const postId = await savePost({
       content: generated.content,
       imagePath: imagePath || undefined,
-      imagePrompt: generated.imagePrompt || undefined,
+      imagePrompt: generated.imageData ? JSON.stringify(generated.imageData) : undefined,
       researchData: JSON.stringify(research),
       status: "draft",
       imageData: imageBuffer || undefined,
@@ -283,10 +283,10 @@ router.post("/api/create/freebie", async (_req: Request, res: Response) => {
     const generated = await generateLinkedInPost(research, true, "freebie");
 
     let imagePath: string | null = null;
-    if (generated.imagePrompt) {
-      imagePath = await generateImage(generated.imagePrompt);
+    if (generated.imageData) {
+      imagePath = await generateImage(generated.imageData);
       if (!imagePath) {
-        imagePath = await generateImage(generated.imagePrompt); // retry once
+        imagePath = await generateImage(generated.imageData); // retry once
       }
     }
 
@@ -298,7 +298,7 @@ router.post("/api/create/freebie", async (_req: Request, res: Response) => {
     const postId = await savePost({
       content: generated.content,
       imagePath: imagePath || undefined,
-      imagePrompt: generated.imagePrompt || undefined,
+      imagePrompt: generated.imageData ? JSON.stringify(generated.imageData) : undefined,
       researchData: JSON.stringify(research),
       status: "draft",
       imageData: imageBuffer || undefined,

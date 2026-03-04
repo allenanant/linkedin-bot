@@ -1,8 +1,11 @@
 import { GoogleGenAI } from "@google/genai";
 import { config } from "../config";
 import { getRecentPosts } from "../storage/db";
+import type { ImageData } from "./image-renderer";
 
 const genAI = new GoogleGenAI({ apiKey: config.gemini.apiKey });
+
+export type { ImageData } from "./image-renderer";
 
 export interface ResearchData {
   trendingTopics: { keyword: string; relatedQueries: string[] }[];
@@ -16,7 +19,7 @@ export interface ResearchData {
 
 export interface GeneratedPost {
   content: string;
-  imagePrompt: string | null;
+  imageData: ImageData | null;
   topic: string;
 }
 
@@ -448,10 +451,9 @@ export function cleanForLinkedIn(text: string): string {
     .trim();
 }
 
-// ─── Step 8: Generate image prompt ───
+// ─── Step 8: Extract image data for freebie (Notion-style) card ───
 
-async function generateImagePrompt(post: string, topic: string): Promise<string> {
-  // Extract the main headline and key points from the post for the image
+async function extractFreebieImageData(post: string, topic: string): Promise<ImageData> {
   const extractPrompt = `From this LinkedIn post, extract VERY SHORT text for an image:
 
 POST:
@@ -474,51 +476,28 @@ POINT4: [2-4 words]`;
 
   const extracted = await callGemini(extractPrompt);
 
-  // Parse the extracted content
   const headlineMatch = extracted.match(/HEADLINE:\s*(.+)/);
   const subtitleMatch = extracted.match(/SUBTITLE:\s*(.+)/);
   const points: string[] = [];
   for (let i = 1; i <= 4; i++) {
     const m = extracted.match(new RegExp(`POINT${i}:\\s*(.+)`));
     if (m) {
-      // Force truncate to max 5 words as safety net
       const words = m[1].trim().split(/\s+/).slice(0, 5).join(" ");
       points.push(words);
     }
   }
 
-  const headline = headlineMatch?.[1]?.trim().split(/\s+/).slice(0, 6).join(" ") || topic.slice(0, 30);
-  const subtitle = subtitleMatch?.[1]?.trim().split(/\s+/).slice(0, 8).join(" ") || "A practical framework";
-
-  // Build a very specific Notion-style mockup prompt
-  const imagePrompt = `Create a screenshot mockup of a Notion-style productivity app page. The image should look EXACTLY like a real macOS app window screenshot:
-
-LAYOUT:
-- macOS window frame at the top with the three colored dots (red, yellow, green) in top-left corner
-- A clean LEFT SIDEBAR (light gray background, about 20% width) with 4-5 navigation items listed vertically using small icons and text labels like: "Content Strategy", "Projects", "Research", "Analytics", "${headline}"
-- The current page "${headline}" should be highlighted/active in the sidebar
-- MAIN CONTENT AREA (white background, 80% width) with:
-  - Large bold black headline text: "${headline}"
-  - Smaller gray subtitle text below: "${subtitle}"
-  - A numbered list with 4 items: 1. ${points[0] || "First step"} 2. ${points[1] || "Second step"} 3. ${points[2] || "Third step"} 4. ${points[3] || "Fourth step"}
-
-STYLE:
-- Clean, minimal, professional — looks like a real Notion page or productivity app
-- White main background, light gray sidebar
-- Black text, clean sans-serif typography (like Inter or SF Pro)
-- NO gradients, NO colorful backgrounds, NO decorative elements
-- NO AI-generated textures or patterns
-- Crisp, sharp, high contrast — like an actual app screenshot
-- The overall feel should be: clean, organized, professional tool
-- Think: Notion, Linear, or Obsidian page screenshot
-- Aspect ratio: landscape (16:9)`;
-
-  return imagePrompt;
+  return {
+    type: "freebie",
+    headline: headlineMatch?.[1]?.trim().split(/\s+/).slice(0, 6).join(" ") || topic.slice(0, 30),
+    subtitle: subtitleMatch?.[1]?.trim().split(/\s+/).slice(0, 8).join(" ") || "A practical framework",
+    points,
+  };
 }
 
-// ─── Step 8b: Generate NEWS-style image prompt ───
+// ─── Step 8b: Extract image data for NEWS-style card ───
 
-async function generateNewsImagePrompt(post: string, topic: string): Promise<string> {
+async function extractNewsImageData(post: string, topic: string): Promise<ImageData> {
   const extractPrompt = `From this LinkedIn post about an AI marketing news story, extract VERY SHORT text for a news-style image:
 
 POST:
@@ -540,32 +519,12 @@ CATEGORY: [2-3 words]`;
   const subtitleMatch = extracted.match(/SUBTITLE:\s*(.+)/);
   const categoryMatch = extracted.match(/CATEGORY:\s*(.+)/);
 
-  const headline = headlineMatch?.[1]?.trim().split(/\s+/).slice(0, 8).join(" ") || topic.slice(0, 40);
-  const subtitle = subtitleMatch?.[1]?.trim().split(/\s+/).slice(0, 10).join(" ") || "What this means for your business";
-  const category = categoryMatch?.[1]?.trim().split(/\s+/).slice(0, 3).join(" ") || "AI MARKETING";
-
-  const imagePrompt = `Create a clean, modern news-style editorial card image. This should look like a premium tech news article thumbnail or a Bloomberg/TechCrunch headline card.
-
-LAYOUT:
-- Full width landscape image, 16:9 aspect ratio
-- A bold colored accent bar or gradient strip across the TOP of the image, about 15% height. Use a deep blue to teal gradient.
-- Inside the accent bar: small white text badge/label saying "${category}" in uppercase, clean sans-serif font
-- MAIN AREA below the accent bar: clean white or very light gray background
-- Large, bold, black headline text centered: "${headline}"
-- Smaller gray subtitle text below the headline: "${subtitle}"
-- At the bottom: a thin subtle line separator, then a small "thegrowthengine.net" watermark in light gray
-
-STYLE:
-- Clean, editorial, professional — like a premium news publication
-- NO photos, NO illustrations, NO icons, NO decorative elements
-- Typography-focused design. The text IS the design.
-- Modern sans-serif fonts like Inter, Helvetica, or SF Pro
-- High contrast: dark text on light background
-- The accent bar color should feel authoritative and tech-forward (deep blue, dark teal, or dark purple)
-- Minimal and sophisticated. Think: The Information, Bloomberg, or Stratechery visual style
-- Crisp and sharp, no gradients on the main area, no shadows on text`;
-
-  return imagePrompt;
+  return {
+    type: "news",
+    headline: headlineMatch?.[1]?.trim().split(/\s+/).slice(0, 8).join(" ") || topic.slice(0, 40),
+    subtitle: subtitleMatch?.[1]?.trim().split(/\s+/).slice(0, 10).join(" ") || "What this means for your business",
+    category: categoryMatch?.[1]?.trim().split(/\s+/).slice(0, 3).join(" ") || "AI MARKETING",
+  };
 }
 
 // ─── Main: Multi-step content generation pipeline ───
@@ -614,19 +573,19 @@ export async function generateLinkedInPost(
   // Step 8: Code-level safety net — clean for LinkedIn
   const finalPost = cleanForLinkedIn(reviewedPost);
 
-  // Generate image prompt (news gets news-style, freebie gets Notion-style)
-  let imagePrompt: string | null = null;
+  // Extract image data (news gets news-style card, freebie gets Notion-style card)
+  let imageData: ImageData | null = null;
   if (shouldIncludeImage) {
-    console.log(`  Generating image prompt (${postType} template)...`);
-    imagePrompt = postType === "news"
-      ? await generateNewsImagePrompt(finalPost, topic)
-      : await generateImagePrompt(finalPost, topic);
+    console.log(`  Extracting image data (${postType} template)...`);
+    imageData = postType === "news"
+      ? await extractNewsImageData(finalPost, topic)
+      : await extractFreebieImageData(finalPost, topic);
   }
 
   return {
     topic: topic.slice(0, 100),
     content: finalPost,
-    imagePrompt,
+    imageData,
   };
 }
 

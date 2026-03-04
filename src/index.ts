@@ -62,12 +62,12 @@ async function runDailyPipeline() {
 
     // Step 3: Generate image (always)
     let imagePath: string | null = null;
-    if (generated.imagePrompt) {
-      log("Generating image with Gemini...");
-      imagePath = await generateImage(generated.imagePrompt);
+    if (generated.imageData) {
+      log("Rendering image...");
+      imagePath = await generateImage(generated.imageData);
       if (!imagePath) {
-        log("Image generation failed. Retrying once...");
-        imagePath = await generateImage(generated.imagePrompt);
+        log("Image rendering failed. Retrying once...");
+        imagePath = await generateImage(generated.imageData);
       }
       if (!imagePath) {
         log("Image generation failed twice. Posting as text-only.");
@@ -84,7 +84,7 @@ async function runDailyPipeline() {
     const postId = await savePost({
       content: generated.content,
       imagePath: imagePath || undefined,
-      imagePrompt: generated.imagePrompt || undefined,
+      imagePrompt: generated.imageData ? JSON.stringify(generated.imageData) : undefined,
       researchData: JSON.stringify(research),
       status: "draft",
       imageData: imageBuffer || undefined,
