@@ -7,17 +7,11 @@ import {
   approvePost,
   updatePostContent,
   rejectPost,
-  getAggregateAnalytics,
-  getWeeklyComparison,
-  getTimelineData,
-  getAnalyticsForPost,
   getLatestTip,
   markPostPublished,
-  getLastAnalyticsUpdate,
   savePost,
 } from "../../storage/db";
 import { createTextPost, createImagePost } from "../../linkedin/post";
-import { updateAllAnalytics } from "../../linkedin/analytics";
 import { config } from "../../config";
 import { notifyPostPublished, notifyDraftReady } from "../../notifications/slack";
 import { runResearch } from "../../pipeline/research";
@@ -59,8 +53,7 @@ router.get("/api/posts/:id", async (req: Request, res: Response) => {
       res.status(404).json({ error: "Post not found" });
       return;
     }
-    const analytics = await getAnalyticsForPost(id);
-    res.json({ post, analytics });
+    res.json({ post });
   } catch (err) {
     console.error("Error fetching post:", err);
     res.status(500).json({ error: "Failed to fetch post" });
@@ -194,32 +187,6 @@ router.put("/api/drafts/:id", async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/analytics/overview
-router.get("/api/analytics/overview", async (_req: Request, res: Response) => {
-  try {
-    const [overview, changes] = await Promise.all([
-      getAggregateAnalytics(7),
-      getWeeklyComparison(),
-    ]);
-    res.json({ overview, changes });
-  } catch (err) {
-    console.error("Error fetching analytics:", err);
-    res.status(500).json({ error: "Failed to fetch analytics" });
-  }
-});
-
-// GET /api/analytics/timeline?days=30
-router.get("/api/analytics/timeline", async (req: Request, res: Response) => {
-  try {
-    const days = parseInt(req.query.days as string) || 30;
-    const timeline = await getTimelineData(days);
-    res.json(timeline);
-  } catch (err) {
-    console.error("Error fetching timeline:", err);
-    res.status(500).json({ error: "Failed to fetch timeline" });
-  }
-});
-
 // GET /api/tip
 router.get("/api/tip", async (_req: Request, res: Response) => {
   try {
@@ -316,18 +283,6 @@ router.post("/api/create/freebie", async (_req: Request, res: Response) => {
   } catch (err: any) {
     console.error("Error creating freebie post:", err);
     res.status(500).json({ error: err.message || "Failed to create freebie post" });
-  }
-});
-
-// POST /api/analytics/refresh — manually trigger analytics fetch from LinkedIn
-router.post("/api/analytics/refresh", async (_req: Request, res: Response) => {
-  try {
-    await updateAllAnalytics(config.linkedin.accessToken);
-    const lastUpdate = await getLastAnalyticsUpdate();
-    res.json({ success: true, lastUpdate });
-  } catch (err) {
-    console.error("Error refreshing analytics:", err);
-    res.status(500).json({ error: "Failed to refresh analytics" });
   }
 });
 

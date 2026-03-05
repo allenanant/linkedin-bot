@@ -3,7 +3,6 @@ import { config } from "./config";
 import { generateLinkedInPost } from "./content/generator";
 import { generateImage, shouldGenerateImage } from "./content/image-generator";
 import { createTextPost, createImagePost } from "./linkedin/post";
-import { updateAllAnalytics } from "./linkedin/analytics";
 import { initDb, savePost, markPostPublished, getTodayPostCount, getApprovedPosts, getPostImage } from "./storage/db";
 import { scheduleDailyJob } from "./scheduler/cron";
 import { notifyDraftReady, notifyPostPublished, notifyPipelineError } from "./notifications/slack";
@@ -74,13 +73,13 @@ async function runDailyPipeline() {
       }
     }
 
-    // Step 5: Read image data if present
+    // Step 4: Read image data if present
     let imageBuffer: Buffer | null = null;
     if (imagePath) {
       imageBuffer = fs.readFileSync(imagePath);
     }
 
-    // Step 6: Save draft to database
+    // Step 5: Save draft to database
     const postId = await savePost({
       content: generated.content,
       imagePath: imagePath || undefined,
@@ -91,17 +90,13 @@ async function runDailyPipeline() {
     });
     log(`Saved post #${postId} as draft. Review and publish from the dashboard.`);
 
-    // Step 7: Notify via Slack
+    // Step 6: Notify via Slack
     await notifyDraftReady({
       postId,
       content: generated.content,
       hasImage: !!imagePath,
       topic: generated.topic,
     });
-
-    // Step 8: Update analytics for previous posts
-    log("Updating analytics for recent posts...");
-    await updateAllAnalytics(config.linkedin.accessToken);
 
     log("=== Daily pipeline complete ===");
   } catch (err: any) {
@@ -134,9 +129,6 @@ switch (command) {
     log(`Scheduling daily post at ${config.bot.postTime} ${config.bot.timezone}`);
     scheduleDailyJob(config.bot.postTime, config.bot.timezone, runDailyPipeline);
     break;
-  case "analytics":
-    updateAllAnalytics(config.linkedin.accessToken);
-    break;
   default:
     console.log(`
 LinkedIn Bot - Daily Automation
@@ -146,7 +138,6 @@ Usage:
   npx tsx src/index.ts research    Run research only
   npx tsx src/index.ts generate    Generate a post (dry run, no publishing)
   npx tsx src/index.ts schedule    Start the daily scheduler
-  npx tsx src/index.ts analytics   Update analytics for recent posts
 
 Setup:
   npx tsx scripts/setup-linkedin.ts   Complete LinkedIn OAuth setup

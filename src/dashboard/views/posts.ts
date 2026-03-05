@@ -5,10 +5,6 @@ interface Post {
   content: string;
   status: string;
   created_at: string;
-  latest_likes: number | null;
-  latest_comments: number | null;
-  latest_shares: number | null;
-  latest_impressions: number | null;
 }
 
 function statusBadge(status: string): string {
@@ -66,16 +62,12 @@ export function postsPage(posts: Post[], page: number, total: number, limit: num
         <td><span style="font-family: var(--font-mono, monospace); font-size: 13px">${new Date(p.created_at).toLocaleDateString()}</span></td>
         <td class="content-cell"><span class="content-cell-text">${truncate(p.content, 120)}</span></td>
         <td>${statusBadge(p.status)}</td>
-        <td>${p.latest_likes ?? 0}</td>
-        <td>${p.latest_comments ?? 0}</td>
-        <td>${p.latest_shares ?? 0}</td>
-        <td>${(p.latest_impressions ?? 0).toLocaleString()}</td>
         <td><a href="/posts/${p.id}" class="view-link">View &rarr;</a></td>
       </tr>`
     )
     .join("\n");
 
-  const emptyRow = `<tr><td colspan="8" class="empty-state">
+  const emptyRow = `<tr><td colspan="4" class="empty-state">
     <div class="empty-state-container" style="padding: 40px 16px">
       <div class="empty-state-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -123,10 +115,6 @@ export function postsPage(posts: Post[], page: number, total: number, limit: num
             <th>Date</th>
             <th>Content</th>
             <th>Status</th>
-            <th>Likes</th>
-            <th>Comments</th>
-            <th>Shares</th>
-            <th>Impressions</th>
             <th></th>
           </tr>
         </thead>

@@ -1,35 +1,22 @@
 import cron from "node-cron";
 import { execFileSync } from "child_process";
 import {
-  getAggregateAnalytics,
-  getWeeklyComparison,
+  getPostCounts,
   saveDailyTip,
 } from "../storage/db";
 
 export async function generateDailyTip(): Promise<void> {
   try {
-    const [thisWeek, changes] = await Promise.all([
-      getAggregateAnalytics(7),
-      getWeeklyComparison(),
-    ]);
+    const counts = await getPostCounts();
 
-    const prompt = `You are a LinkedIn content strategist. Analyze these weekly metrics and give ONE short (2-3 sentences) actionable insight to improve LinkedIn engagement.
+    const prompt = `You are a LinkedIn content strategist. Based on these posting stats, give ONE short (2-3 sentences) actionable insight to improve LinkedIn engagement.
 
-This week's metrics:
-- Posts: ${thisWeek.postCount}
-- Likes: ${thisWeek.totalLikes}
-- Comments: ${thisWeek.totalComments}
-- Shares: ${thisWeek.totalShares}
-- Impressions: ${thisWeek.totalImpressions}
-- Image posts: ${thisWeek.imagePostCount}, Text posts: ${thisWeek.textPostCount}
+Posting stats:
+- Total posts: ${counts.postCount}
+- Image posts: ${counts.imagePostCount}
+- Text posts: ${counts.textPostCount}
 
-Week-over-week changes:
-- Likes: ${changes.likesChange}%
-- Comments: ${changes.commentsChange}%
-- Shares: ${changes.sharesChange}%
-- Impressions: ${changes.impressionsChange}%
-
-Give ONE specific, actionable tip based on these numbers. Be concise and direct.`;
+Give ONE specific, actionable tip about content strategy, posting frequency, or content types. Be concise and direct.`;
 
     const result = execFileSync(
       "claude",
@@ -43,7 +30,7 @@ Give ONE specific, actionable tip based on these numbers. Be concise and direct.
     );
     const tipContent = result.trim();
 
-    const snapshot = { thisWeek, changes };
+    const snapshot = { counts };
     await saveDailyTip(tipContent, snapshot);
 
     console.log("[Tips] Daily tip generated successfully");

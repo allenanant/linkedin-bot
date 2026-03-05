@@ -3,12 +3,8 @@ import {
   getAllPosts,
   getPostById,
   getDraftPosts,
-  getAggregateAnalytics,
-  getWeeklyComparison,
-  getTimelineData,
-  getAnalyticsForPost,
+  getPostCounts,
   getLatestTip,
-  getLastAnalyticsUpdate,
 } from "../../storage/db";
 import { homePage } from "../views/home";
 import { postsPage } from "../views/posts";
@@ -35,15 +31,12 @@ async function getDraftCount(): Promise<number> {
 // GET / - Overview page
 router.get("/", async (_req: Request, res: Response) => {
   try {
-    const [overview, changes, timeline, tip, draftCount, lastUpdate] = await Promise.all([
-      getAggregateAnalytics(),
-      getWeeklyComparison(),
-      getTimelineData(30),
+    const [overview, tip, draftCount] = await Promise.all([
+      getPostCounts(),
       getLatestTip(),
       getDraftCount(),
-      getLastAnalyticsUpdate(),
     ]);
-    const html = homePage(overview, changes, timeline, timeline, tip, { draftCount, lastAnalyticsUpdate: lastUpdate });
+    const html = homePage(overview, tip, { draftCount });
     res.send(html);
   } catch (err) {
     console.error("Error rendering overview:", err);
@@ -85,8 +78,7 @@ router.get("/posts/:id", async (req: Request, res: Response) => {
       res.status(404).send("Post not found");
       return;
     }
-    const analytics = await getAnalyticsForPost(id);
-    const html = postDetailPage(post, analytics, { draftCount });
+    const html = postDetailPage(post, { draftCount });
     res.send(html);
   } catch (err) {
     console.error("Error rendering post detail:", err);
