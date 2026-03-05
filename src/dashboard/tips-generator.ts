@@ -1,6 +1,5 @@
 import cron from "node-cron";
-import { GoogleGenAI } from "@google/genai";
-import { config } from "../config";
+import { execFileSync } from "child_process";
 import {
   getAggregateAnalytics,
   getWeeklyComparison,
@@ -32,12 +31,17 @@ Week-over-week changes:
 
 Give ONE specific, actionable tip based on these numbers. Be concise and direct.`;
 
-    const genAI = new GoogleGenAI({ apiKey: config.gemini.apiKey });
-    const result = await genAI.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: prompt,
-    });
-    const tipContent = result.text || "";
+    const result = execFileSync(
+      "claude",
+      ["-p", "--model", "haiku", "--output-format", "text"],
+      {
+        input: prompt,
+        encoding: "utf-8",
+        timeout: 30_000,
+        maxBuffer: 1024 * 1024,
+      }
+    );
+    const tipContent = result.trim();
 
     const snapshot = { thisWeek, changes };
     await saveDailyTip(tipContent, snapshot);

@@ -1,9 +1,6 @@
-import { GoogleGenAI } from "@google/genai";
-import { config } from "../config";
+import { execFileSync } from "child_process";
 import { getRecentPosts } from "../storage/db";
 import type { ImageData } from "./image-renderer";
-
-const genAI = new GoogleGenAI({ apiKey: config.gemini.apiKey });
 
 export type { ImageData } from "./image-renderer";
 
@@ -591,16 +588,21 @@ export async function generateLinkedInPost(
 
 async function callGemini(prompt: string): Promise<string> {
   try {
-    const response = await genAI.models.generateContent({
-      model: "gemini-2.5-pro",
-      contents: prompt,
-    });
-
-    const text = response.text;
-    if (!text) throw new Error("Empty response from Gemini");
-    return text.trim();
+    const result = execFileSync(
+      "claude",
+      ["-p", "--model", "sonnet", "--output-format", "text"],
+      {
+        input: prompt,
+        encoding: "utf-8",
+        timeout: 120_000,
+        maxBuffer: 1024 * 1024,
+      }
+    );
+    const text = result.trim();
+    if (!text) throw new Error("Empty response from Claude CLI");
+    return text;
   } catch (err: any) {
-    console.error(`Gemini API call failed: ${err.message}`);
-    throw new Error("Failed to generate content via Gemini API.");
+    console.error(`Claude CLI call failed: ${err.message}`);
+    throw new Error("Failed to generate content via Claude CLI.");
   }
 }

@@ -23,7 +23,7 @@ export const config = {
     redirectUri: optional("LINKEDIN_REDIRECT_URI", "http://localhost:3456/callback"),
   },
   gemini: {
-    apiKey: required("GEMINI_API_KEY"),
+    apiKey: process.env.GEMINI_API_KEY || "",  // No longer required — using Claude CLI instead
   },
   newsApi: {
     apiKey: required("NEWS_API_KEY"),
