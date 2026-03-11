@@ -4,7 +4,7 @@ import { generateLinkedInPost } from "./content/generator";
 import { generateImage, shouldGenerateImage } from "./content/image-generator";
 import { createTextPost, createImagePost } from "./linkedin/post";
 import { initDb, savePost, markPostPublished, getTodayPostCount, getApprovedPosts, getPostImage } from "./storage/db";
-import { scheduleDailyJob } from "./scheduler/cron";
+import { scheduleDailyJobs } from "./scheduler/cron";
 import { notifyDraftReady, notifyPostPublished, notifyPipelineError } from "./notifications/slack";
 import { runResearch } from "./pipeline/research";
 
@@ -42,7 +42,7 @@ async function runDailyPipeline() {
   await publishApprovedPosts();
 
   // Allow up to 2 posts per day
-  const maxPostsPerDay = 2;
+  const maxPostsPerDay = 3;
   const todayCount = await getTodayPostCount();
   if (todayCount >= maxPostsPerDay) {
     log(`Already posted ${todayCount} time(s) today (max ${maxPostsPerDay}). Skipping.`);
@@ -122,12 +122,12 @@ switch (command) {
       .then((p) => {
         console.log("\n--- Generated Post ---");
         console.log(p.content);
-        if (p.imagePrompt) console.log("\n--- Image Prompt ---\n" + p.imagePrompt);
+        if (p.imageData) console.log("\n--- Image Data ---\n" + JSON.stringify(p.imageData));
       });
     break;
   case "schedule":
-    log(`Scheduling daily post at ${config.bot.postTime} ${config.bot.timezone}`);
-    scheduleDailyJob(config.bot.postTime, config.bot.timezone, runDailyPipeline);
+    log(`Scheduling daily posts at ${config.bot.postTimes.join(", ")} ${config.bot.timezone}`);
+    scheduleDailyJobs(config.bot.postTimes, config.bot.timezone, runDailyPipeline);
     break;
   default:
     console.log(`

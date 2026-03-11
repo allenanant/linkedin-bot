@@ -1,5 +1,4 @@
 import axios from "axios";
-import { getPostsWithLinkedinId, saveAnalytics } from "../storage/db";
 
 const LINKEDIN_API = "https://api.linkedin.com";
 
@@ -43,15 +42,7 @@ export async function fetchPostAnalytics(
   }
 }
 
-export async function updateAllAnalytics(accessToken: string) {
-  const posts = await getPostsWithLinkedinId();
-  console.log(`Fetching analytics for ${posts.length} recent posts...`);
-
-  for (const post of posts) {
-    const metrics = await fetchPostAnalytics(accessToken, post.linkedin_post_id);
-    await saveAnalytics(post.id, metrics);
-    console.log(
-      `  Post #${post.id}: ${metrics.likes} likes, ${metrics.comments} comments, ${metrics.shares} shares, ${metrics.impressions} impressions`
-    );
-  }
+// TODO: Wire up once getPostsWithLinkedinId and saveAnalytics are added to db.ts
+export async function updateAllAnalytics(_accessToken: string) {
+  console.warn("Analytics collection not yet wired up (missing db functions).");
 }
