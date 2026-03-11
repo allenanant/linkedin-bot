@@ -28,8 +28,13 @@ echo ">> Building TypeScript..."
 npm run build
 
 echo ""
+echo ">> Copying non-TS assets to dist..."
+cp -r src/content/fonts dist/content/fonts 2>/dev/null || true
+
+echo ""
 echo ">> Restarting processes..."
-pm2 restart ecosystem.config.js
+pm2 delete all 2>/dev/null || true
+pm2 start ecosystem.config.js
 
 echo ""
 echo ">> Current status:"
