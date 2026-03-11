@@ -24,6 +24,10 @@ echo ">> Installing dependencies..."
 npm install
 
 echo ""
+echo ">> Building TypeScript..."
+npm run build
+
+echo ""
 echo ">> Restarting processes..."
 pm2 restart ecosystem.config.js
 

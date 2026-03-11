@@ -2,9 +2,10 @@ module.exports = {
   apps: [
     {
       name: "linkedin-bot",
-      script: "npx",
-      args: "tsx src/index.ts schedule",
+      script: "dist/index.js",
+      args: "schedule",
       cwd: __dirname,
+      interpreter: "node",
       watch: false,
       autorestart: true,
       max_restarts: 10,
@@ -19,9 +20,9 @@ module.exports = {
     },
     {
       name: "linkedin-dashboard",
-      script: "npx",
-      args: "tsx src/dashboard/server.ts",
+      script: "dist/dashboard/server.js",
       cwd: __dirname,
+      interpreter: "node",
       watch: false,
       autorestart: true,
       max_restarts: 10,

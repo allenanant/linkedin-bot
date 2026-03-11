@@ -1,6 +1,8 @@
 import { execFileSync } from "child_process";
 import { getRecentPosts } from "../storage/db";
 import type { ImageData } from "./image-renderer";
+import { fetchLinkedInPosts, fetchCompetitorLinkedInPosts } from "../research/linkedin-posts";
+import { config } from "../config";
 
 export type { ImageData } from "./image-renderer";
 
@@ -147,25 +149,51 @@ function formatViewCount(count: number): string {
   return count.toString();
 }
 
-// ─── Step 2: Research similar high-performing posts ───
+// ─── Step 2: Research similar high-performing posts (REAL data) ───
 
 async function researchSimilarPosts(topic: string): Promise<string> {
+  const { apiKey, searchEngineId } = config.socialSearch;
+
+  // Fetch real LinkedIn posts about this topic
+  const [topicPosts, competitorPosts] = await Promise.all([
+    fetchLinkedInPosts(apiKey, searchEngineId, topic, 8),
+    fetchCompetitorLinkedInPosts(apiKey, searchEngineId),
+  ]);
+
+  const allPosts = [...topicPosts, ...competitorPosts];
+
+  // Build a section with real post data for AI to analyze
+  const realPostsSection = allPosts.length > 0
+    ? allPosts
+        .slice(0, 15)
+        .map((p, i) => `${i + 1}. [${p.author}] "${p.title}"\n   Snippet: ${p.snippet}\n   URL: ${p.link}`)
+        .join("\n\n")
+    : "No real posts found via search. Use your knowledge of top LinkedIn creators instead.";
+
   const prompt = `You are a LinkedIn content researcher. I'm writing a post about: "${topic}"
 
-Study the patterns of top LinkedIn creators like Ruben Hassid, Ross Simmonds, Jasmin Alic, and Kevin Indig. Based on their style, describe 3 examples of how they would write a high-performing post on this topic:
+REAL LINKEDIN POSTS I found on this topic and from top creators. Analyze these ACTUAL posts for patterns:
 
-For each example:
-1. HOOK — the first 1-2 lines that make someone click "see more." Must be under 12 words. Use curiosity gap, contrarian statement, or bold claim.
-2. REHOOK — the line immediately after the hook that "slams the door" and removes any reason to scroll past.
-3. VALUE FORMAT — how they structure the meat: numbered tactical steps? data breakdown? story with a twist?
-4. CTA STYLE — how they drive comments without being cringe.
+${realPostsSection}
 
-Also identify:
-- The most POLARIZING angle on this topic — what would make people argue in comments?
-- A specific, tangible freebie related to this topic — like an AI prompt pack, checklist, or framework — that people would comment a keyword to get
-- What data point or stat would make someone stop scrolling?
+Based on these REAL posts, analyze:
 
-Be specific and tactical. No generic "write engaging content" advice.`;
+1. HOOKS THAT WORKED — What opening lines did these posts use? What patterns do you see? Which hooks would make someone stop scrolling?
+
+2. STRUCTURE PATTERNS — How did the high-performing posts structure their content? Numbered lists? Stories? Data breakdowns? Single-line punches?
+
+3. CTA PATTERNS — How did they drive engagement? Comment keywords? Questions? Controversial takes?
+
+4. WHAT'S MISSING — What angle on "${topic}" are these posts NOT covering that Allen could own? What contrarian take is nobody making?
+
+5. SPECIFIC ELEMENTS TO STEAL:
+   - The most compelling hook pattern from the posts above
+   - The best structural format for THIS topic
+   - A freebie idea (AI prompt pack, checklist, framework) that people would comment a keyword to get
+   - What data point or stat would make someone stop scrolling?
+   - The most POLARIZING angle that would spark debate
+
+Be specific and tactical. Reference the actual posts above when making recommendations.`;
 
   return await callGemini(prompt);
 }
