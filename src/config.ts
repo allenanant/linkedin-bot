@@ -29,8 +29,8 @@ export const config = {
     apiKey: required("NEWS_API_KEY"),
   },
   bot: {
-    postTime: optional("POST_TIME", "09:00"),
-    timezone: optional("TIMEZONE", "America/New_York"),
+    postTimes: optional("POST_TIMES", "09:00,13:00,19:00").split(",").map((t) => t.trim()),
+    timezone: optional("TIMEZONE", "Asia/Kolkata"),
     industryKeywords: optional("INDUSTRY_KEYWORDS", "AI,SaaS,software,marketing,ads").split(",").map((k) => k.trim()),
     imagePostPercentage: parseInt(optional("IMAGE_POST_PERCENTAGE", "40"), 10),
     autoPost: optional("AUTO_POST", "true") === "true",
