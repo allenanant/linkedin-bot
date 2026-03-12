@@ -13,7 +13,7 @@
     "analytics": "npx tsx src/index.ts analytics",
     "start": "npx tsx src/index.ts schedule",
     "dashboard": "npx tsx src/dashboard/server.ts",
-    "build": "tsc"
+    "build": "tsc && mkdir -p dist/dashboard/public && cp -r src/dashboard/public/ dist/dashboard/public/"
   },
   "keywords": [],
   "author": "",
