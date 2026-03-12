@@ -3,7 +3,9 @@ import { layout } from "./layout";
 interface Draft {
   id: number;
   content: string;
+  post_type: string;
   has_image: boolean;
+  has_pdf: boolean;
   created_at: string;
 }
 
@@ -41,9 +43,10 @@ export function draftsPage(drafts: Draft[], meta?: { draftCount?: number }): str
               ${new Date(d.created_at).toLocaleDateString()}
             </span>
           </div>
-          <span class="badge badge-draft">draft</span>
+          ${d.post_type === "carousel" ? `<span class="badge badge-carousel">carousel</span>` : `<span class="badge badge-draft">draft</span>`}
         </div>
-        ${d.has_image ? `<div class="draft-image"><img src="/api/posts/${d.id}/image" alt="Post image" loading="lazy"></div>` : ""}
+        ${d.has_pdf ? `<div class="draft-pdf-preview"><a href="/api/posts/${d.id}/pdf" target="_blank" class="pdf-preview-link"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Preview Carousel PDF</a></div>` : ""}
+        ${d.has_image && !d.has_pdf ? `<div class="draft-image"><img src="/api/posts/${d.id}/image" alt="Post image" loading="lazy"></div>` : ""}
         <div class="draft-content">
           <textarea class="draft-textarea" id="draft-content-${d.id}" rows="8" oninput="updateCharCount(this)">${escapeHtml(d.content)}</textarea>
           <div class="char-count" id="char-count-${d.id}">${d.content.length} / 3,000</div>

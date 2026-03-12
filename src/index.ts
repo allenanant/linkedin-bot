@@ -1,9 +1,10 @@
 import fs from "fs";
 import { config } from "./config";
 import { generateLinkedInPost } from "./content/generator";
-import { generateImage, shouldGenerateImage } from "./content/image-generator";
-import { createTextPost, createImagePost } from "./linkedin/post";
-import { initDb, savePost, markPostPublished, getTodayPostCount, getApprovedPosts, getPostImage } from "./storage/db";
+import { generateImage } from "./content/image-generator";
+import { generateCarousel, shouldGenerateCarousel } from "./content/carousel-generator";
+import { createTextPost, createImagePost, createDocumentPost } from "./linkedin/post";
+import { initDb, savePost, markPostPublished, getTodayPostCount, getApprovedPosts, getPostImage, getPostPdf } from "./storage/db";
 import { scheduleDailyJobs } from "./scheduler/cron";
 import { notifyDraftReady, notifyPostPublished, notifyPipelineError } from "./notifications/slack";
 import { runResearch } from "./pipeline/research";
@@ -16,16 +17,35 @@ async function publishApprovedPosts() {
   const approved = await getApprovedPosts();
   for (const post of approved) {
     try {
-      log(`Publishing approved post #${post.id}...`);
+      log(`Publishing approved post #${post.id} (type: ${post.post_type || "text"})...`);
       let linkedinPostId: string;
-      const imageRecord = await getPostImage(post.id);
-      if (imageRecord && imageRecord.data) {
-        linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, imageRecord.data);
-      } else if (post.image_path) {
-        linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, post.image_path);
+
+      // Check for PDF carousel first
+      if (post.post_type === "carousel") {
+        const pdfData = await getPostPdf(post.id);
+        if (pdfData) {
+          linkedinPostId = await createDocumentPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content,
+            pdfData
+          );
+        } else {
+          log(`Post #${post.id} is carousel but has no PDF data. Falling back to text.`);
+          linkedinPostId = await createTextPost(config.linkedin.accessToken, config.linkedin.personUrn, post.content);
+        }
       } else {
-        linkedinPostId = await createTextPost(config.linkedin.accessToken, config.linkedin.personUrn, post.content);
+        // Image or text post
+        const imageRecord = await getPostImage(post.id);
+        if (imageRecord && imageRecord.data) {
+          linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, imageRecord.data);
+        } else if (post.image_path) {
+          linkedinPostId = await createImagePost(config.linkedin.accessToken, config.linkedin.personUrn, post.content, post.image_path);
+        } else {
+          linkedinPostId = await createTextPost(config.linkedin.accessToken, config.linkedin.personUrn, post.content);
+        }
       }
+
       await markPostPublished(post.id, linkedinPostId);
       log(`Published approved post #${post.id}: ${linkedinPostId}`);
       await notifyPostPublished(post.id, linkedinPostId);
@@ -41,7 +61,6 @@ async function runDailyPipeline() {
   await initDb();
   await publishApprovedPosts();
 
-  // Allow up to 2 posts per day
   const maxPostsPerDay = 3;
   const todayCount = await getTodayPostCount();
   if (todayCount >= maxPostsPerDay) {
@@ -54,32 +73,48 @@ async function runDailyPipeline() {
     // Step 1: Research
     const research = await runResearch();
 
-    // Step 2: Generate content (always with image prompt)
+    // Step 2: Generate content
     log("Generating post content with AI...");
     const generated = await generateLinkedInPost(research, true);
     log(`Generated post about: ${generated.topic}`);
 
-    // Step 3: Generate image (always)
+    // Step 3: Decide format - carousel (40%) or image (60%)
+    const useCarousel = shouldGenerateCarousel();
     let imagePath: string | null = null;
-    if (generated.imageData) {
+    let imageBuffer: Buffer | null = null;
+    let pdfBuffer: Buffer | null = null;
+    let postType = "text";
+
+    if (useCarousel) {
+      // Generate PDF carousel
+      log("Generating PDF carousel...");
+      try {
+        pdfBuffer = await generateCarousel(generated.content, generated.topic);
+        postType = "carousel";
+        log(`Carousel PDF generated: ${pdfBuffer.length} bytes`);
+      } catch (err: any) {
+        log(`Carousel generation failed: ${err.message}. Falling back to image.`);
+        pdfBuffer = null;
+      }
+    }
+
+    if (!pdfBuffer && generated.imageData) {
+      // Generate regular image
       log("Rendering image...");
       imagePath = await generateImage(generated.imageData);
       if (!imagePath) {
         log("Image rendering failed. Retrying once...");
         imagePath = await generateImage(generated.imageData);
       }
-      if (!imagePath) {
+      if (imagePath) {
+        imageBuffer = fs.readFileSync(imagePath);
+        postType = "image";
+      } else {
         log("Image generation failed twice. Posting as text-only.");
       }
     }
 
-    // Step 4: Read image data if present
-    let imageBuffer: Buffer | null = null;
-    if (imagePath) {
-      imageBuffer = fs.readFileSync(imagePath);
-    }
-
-    // Step 5: Save draft to database
+    // Step 4: Save draft to database
     const postId = await savePost({
       content: generated.content,
       imagePath: imagePath || undefined,
@@ -87,14 +122,16 @@ async function runDailyPipeline() {
       researchData: JSON.stringify(research),
       status: "draft",
       imageData: imageBuffer || undefined,
+      pdfData: pdfBuffer || undefined,
+      postType,
     });
-    log(`Saved post #${postId} as draft. Review and publish from the dashboard.`);
+    log(`Saved post #${postId} as ${postType} draft. Review and publish from the dashboard.`);
 
-    // Step 6: Notify via Slack
+    // Step 5: Notify via Slack
     await notifyDraftReady({
       postId,
       content: generated.content,
-      hasImage: !!imagePath,
+      hasImage: !!imagePath || !!pdfBuffer,
       topic: generated.topic,
     });
 

@@ -142,3 +142,82 @@ export async function createImagePost(
   const postId = response.headers["x-restli-id"] || response.data?.id || "unknown";
   return postId;
 }
+
+export async function uploadDocument(
+  accessToken: string,
+  personUrn: string,
+  pdfBuffer: Buffer
+): Promise<string> {
+  const initResponse = await axios.post(
+    `${LINKEDIN_API}/rest/documents?action=initializeUpload`,
+    {
+      initializeUploadRequest: {
+        owner: personUrn,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": "202602",
+      },
+    }
+  );
+
+  const { uploadUrl, document: documentUrn } = initResponse.data.value;
+
+  await axios.put(uploadUrl, pdfBuffer, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/pdf",
+    },
+    maxBodyLength: Infinity,
+  });
+
+  return documentUrn;
+}
+
+export async function createDocumentPost(
+  accessToken: string,
+  personUrn: string,
+  text: string,
+  pdfBuffer: Buffer,
+  title?: string
+): Promise<string> {
+  const documentUrn = await uploadDocument(accessToken, personUrn, pdfBuffer);
+  const cleanText = sanitizeForLinkedIn(text);
+
+  const response = await axios.post(
+    `${LINKEDIN_API}/rest/posts`,
+    {
+      author: personUrn,
+      commentary: cleanText,
+      visibility: "PUBLIC",
+      distribution: {
+        feedDistribution: "MAIN_FEED",
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
+      content: {
+        media: {
+          title: title || "Swipe through for the full breakdown",
+          id: documentUrn,
+        },
+      },
+      lifecycleState: "PUBLISHED",
+      isReshareDisabledByAuthor: false,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": "202602",
+      },
+    }
+  );
+
+  const postId = response.headers["x-restli-id"] || response.data?.id || "unknown";
+  return postId;
+}

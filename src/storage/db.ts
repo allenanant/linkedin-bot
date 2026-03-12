@@ -20,6 +20,8 @@ export async function initDb(): Promise<void> {
       image_data BYTEA,
       image_mime TEXT DEFAULT 'image/png',
       image_prompt TEXT,
+      pdf_data BYTEA,
+      post_type TEXT NOT NULL DEFAULT 'text',
       linkedin_post_id TEXT,
       status TEXT NOT NULL DEFAULT 'draft',
       research_data JSONB,
@@ -41,6 +43,15 @@ export async function initDb(): Promise<void> {
       generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
   `);
+
+  // Add columns if they don't exist (for existing databases)
+  await pool.query(`
+    DO $$ BEGIN
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS pdf_data BYTEA;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS post_type TEXT NOT NULL DEFAULT 'text';
+    EXCEPTION WHEN OTHERS THEN NULL;
+    END $$;
+  `);
 }
 
 // ─── Post functions ───
@@ -51,18 +62,22 @@ export async function savePost(post: {
   imageData?: Buffer;
   imageMime?: string;
   imagePrompt?: string;
+  pdfData?: Buffer;
+  postType?: string;
   researchData?: string;
   status?: string;
 }): Promise<number> {
   const result = await pool.query(
-    `INSERT INTO posts (content, image_path, image_data, image_mime, image_prompt, research_data, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
+    `INSERT INTO posts (content, image_path, image_data, image_mime, image_prompt, pdf_data, post_type, research_data, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
     [
       post.content,
       post.imagePath || null,
       post.imageData || null,
       post.imageMime || "image/png",
       post.imagePrompt || null,
+      post.pdfData || null,
+      post.postType || "text",
       post.researchData || null,
       post.status || "draft",
     ]
@@ -103,7 +118,7 @@ export async function saveResearchCache(type: string, data: any) {
 
 export async function getAllPosts(page = 1, limit = 20, status?: string): Promise<{ posts: any[]; total: number }> {
   const offset = (page - 1) * limit;
-  let query = `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image FROM posts`;
+  let query = `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, post_type, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image, (pdf_data IS NOT NULL) as has_pdf FROM posts`;
   let countQuery = `SELECT COUNT(*) as count FROM posts`;
   const params: any[] = [];
   const countParams: any[] = [];
@@ -128,7 +143,7 @@ export async function getAllPosts(page = 1, limit = 20, status?: string): Promis
 
 export async function getPostById(id: number): Promise<any> {
   const result = await pool.query(
-    `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image FROM posts WHERE id = $1`,
+    `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, post_type, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image, (pdf_data IS NOT NULL) as has_pdf FROM posts WHERE id = $1`,
     [id]
   );
   return result.rows[0] || null;
@@ -140,9 +155,14 @@ export async function getPostImage(id: number): Promise<{ data: Buffer; mime: st
   return { data: result.rows[0].image_data, mime: result.rows[0].image_mime };
 }
 
+export async function getPostPdf(id: number): Promise<Buffer | null> {
+  const result = await pool.query(`SELECT pdf_data FROM posts WHERE id = $1`, [id]);
+  return result.rows[0]?.pdf_data || null;
+}
+
 export async function getDraftPosts(): Promise<any[]> {
   const result = await pool.query(
-    `SELECT id, content, created_at, (image_data IS NOT NULL) as has_image FROM posts WHERE status = 'draft' ORDER BY created_at DESC`
+    `SELECT id, content, post_type, created_at, (image_data IS NOT NULL) as has_image, (pdf_data IS NOT NULL) as has_pdf FROM posts WHERE status = 'draft' ORDER BY created_at DESC`
   );
   return result.rows;
 }
@@ -156,7 +176,7 @@ export async function getDraftCount(): Promise<number> {
 
 export async function getApprovedPosts(): Promise<any[]> {
   const result = await pool.query(
-    `SELECT id, content, image_path, image_prompt, status, created_at, (image_data IS NOT NULL) as has_image FROM posts WHERE status = 'approved' ORDER BY created_at ASC`
+    `SELECT id, content, image_path, image_prompt, post_type, status, created_at, (image_data IS NOT NULL) as has_image, (pdf_data IS NOT NULL) as has_pdf FROM posts WHERE status = 'approved' ORDER BY created_at ASC`
   );
   return result.rows;
 }

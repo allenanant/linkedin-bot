@@ -3,6 +3,7 @@ import {
   getAllPosts,
   getPostById,
   getPostImage,
+  getPostPdf,
   getDraftPosts,
   approvePost,
   updatePostContent,
@@ -11,12 +12,13 @@ import {
   markPostPublished,
   savePost,
 } from "../../storage/db";
-import { createTextPost, createImagePost } from "../../linkedin/post";
+import { createTextPost, createImagePost, createDocumentPost } from "../../linkedin/post";
 import { config } from "../../config";
 import { notifyPostPublished, notifyDraftReady } from "../../notifications/slack";
 import { runResearch } from "../../pipeline/research";
 import { generateLinkedInPost } from "../../content/generator";
 import { generateImage } from "../../content/image-generator";
+import { generateCarousel } from "../../content/carousel-generator";
 import fs from "fs";
 
 const router = Router();
@@ -82,6 +84,29 @@ router.get("/api/posts/:id/image", async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/posts/:id/pdf
+router.get("/api/posts/:id/pdf", async (req: Request, res: Response) => {
+  try {
+    const id = parseInt(paramStr(req.params.id));
+    if (isNaN(id)) {
+      res.status(400).json({ error: "Invalid post ID" });
+      return;
+    }
+    const pdf = await getPostPdf(id);
+    if (!pdf) {
+      res.status(404).json({ error: "No PDF found" });
+      return;
+    }
+    res.set("Content-Type", "application/pdf");
+    res.set("Cache-Control", "public, max-age=86400");
+    res.set("Content-Disposition", `inline; filename="post-${id}-carousel.pdf"`);
+    res.send(pdf);
+  } catch (err) {
+    console.error("Error fetching PDF:", err);
+    res.status(500).json({ error: "Failed to fetch PDF" });
+  }
+});
+
 // GET /api/drafts
 router.get("/api/drafts", async (_req: Request, res: Response) => {
   try {
@@ -113,28 +138,46 @@ router.post("/api/drafts/:id/approve", async (req: Request, res: Response) => {
       }
 
       let linkedinPostId: string;
-      // Check for image data in DB first, then fall back to file path
-      const imageRecord = await getPostImage(id);
-      if (imageRecord && imageRecord.data) {
-        linkedinPostId = await createImagePost(
-          config.linkedin.accessToken,
-          config.linkedin.personUrn,
-          post.content,
-          imageRecord.data
-        );
-      } else if (post.image_path) {
-        linkedinPostId = await createImagePost(
-          config.linkedin.accessToken,
-          config.linkedin.personUrn,
-          post.content,
-          post.image_path
-        );
+
+      if (post.post_type === "carousel") {
+        const pdfData = await getPostPdf(id);
+        if (pdfData) {
+          linkedinPostId = await createDocumentPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content,
+            pdfData
+          );
+        } else {
+          linkedinPostId = await createTextPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content
+          );
+        }
       } else {
-        linkedinPostId = await createTextPost(
-          config.linkedin.accessToken,
-          config.linkedin.personUrn,
-          post.content
-        );
+        const imageRecord = await getPostImage(id);
+        if (imageRecord && imageRecord.data) {
+          linkedinPostId = await createImagePost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content,
+            imageRecord.data
+          );
+        } else if (post.image_path) {
+          linkedinPostId = await createImagePost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content,
+            post.image_path
+          );
+        } else {
+          linkedinPostId = await createTextPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content
+          );
+        }
       }
 
       await markPostPublished(id, linkedinPostId);
@@ -283,6 +326,38 @@ router.post("/api/create/freebie", async (_req: Request, res: Response) => {
   } catch (err: any) {
     console.error("Error creating freebie post:", err);
     res.status(500).json({ error: err.message || "Failed to create freebie post" });
+  }
+});
+
+// POST /api/create/carousel — generate a carousel PDF draft post on demand
+router.post("/api/create/carousel", async (_req: Request, res: Response) => {
+  try {
+    console.log("[Dashboard] Creating carousel post on demand...");
+    const research = await runResearch();
+    const generated = await generateLinkedInPost(research, false, "freebie");
+
+    const pdfBuffer = await generateCarousel(generated.content, generated.topic);
+
+    const postId = await savePost({
+      content: generated.content,
+      researchData: JSON.stringify(research),
+      status: "draft",
+      pdfData: pdfBuffer,
+      postType: "carousel",
+    });
+
+    await notifyDraftReady({
+      postId,
+      content: generated.content,
+      hasImage: true,
+      topic: generated.topic,
+    });
+
+    console.log(`[Dashboard] Carousel post #${postId} created as draft.`);
+    res.json({ success: true, postId });
+  } catch (err: any) {
+    console.error("Error creating carousel post:", err);
+    res.status(500).json({ error: err.message || "Failed to create carousel post" });
   }
 });
 
