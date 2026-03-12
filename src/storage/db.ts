@@ -10,10 +10,14 @@ export async function initDb(): Promise<void> {
     connectionString: config.database.url,
     ssl: { rejectUnauthorized: false },
     max: 5,
-    idleTimeoutMillis: 0,
+    idleTimeoutMillis: 30000,
     connectionTimeoutMillis: 10000,
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000,
+  });
+
+  // Handle background disconnections (Neon auto-suspend) so dead clients
+  // get removed from the pool and fresh ones are created on next query.
+  pool.on("error", (err) => {
+    console.error("[DB] Idle client error (will reconnect):", err.message);
   });
 
   await pool.query(`
@@ -71,22 +75,30 @@ export async function savePost(post: {
   researchData?: string;
   status?: string;
 }): Promise<number> {
-  const result = await pool.query(
-    `INSERT INTO posts (content, image_path, image_data, image_mime, image_prompt, pdf_data, post_type, research_data, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`,
-    [
-      post.content,
-      post.imagePath || null,
-      post.imageData || null,
-      post.imageMime || "image/png",
-      post.imagePrompt || null,
-      post.pdfData || null,
-      post.postType || "text",
-      post.researchData || null,
-      post.status || "draft",
-    ]
-  );
-  return result.rows[0].id;
+  const sql = `INSERT INTO posts (content, image_path, image_data, image_mime, image_prompt, pdf_data, post_type, research_data, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id`;
+  const params = [
+    post.content,
+    post.imagePath || null,
+    post.imageData || null,
+    post.imageMime || "image/png",
+    post.imagePrompt || null,
+    post.pdfData || null,
+    post.postType || "text",
+    post.researchData || null,
+    post.status || "draft",
+  ];
+  try {
+    const result = await pool.query(sql, params);
+    return result.rows[0].id;
+  } catch (err: any) {
+    if (err.message?.includes("Connection terminated") || err.message?.includes("connection")) {
+      console.log("[DB] Connection lost, retrying savePost...");
+      const result = await pool.query(sql, params);
+      return result.rows[0].id;
+    }
+    throw err;
+  }
 }
 
 export async function markPostPublished(postId: number, linkedinPostId: string) {
