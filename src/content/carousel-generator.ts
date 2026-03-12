@@ -18,16 +18,19 @@ ${post}
 TOPIC: ${topic}
 
 The carousel needs 5-6 slides of content. Each slide has ONE key point.
+The cover slide is in Nick Saraev's style: big bold hook at the top, with a key phrase highlighted in gold.
 
 RULES:
-- HOOK: A bold, curiosity-driven headline for the cover slide. 5-10 words max. Should make someone stop scrolling.
+- HOOK: A bold, curiosity-driven headline for the cover slide. 6-12 words max. Should make someone stop scrolling.
+- HOOK_ACCENT: The specific 3-5 word phrase WITHIN the hook that should be highlighted in gold italic. This should be the most emotionally resonant or specific part.
 - SUBTITLE: 1 short sentence expanding on the hook. Under 12 words.
 - Each SLIDE_TITLE: 3-6 words. Bold, clear, scannable.
 - Each SLIDE_BODY: 1-2 sentences max. The practical detail or insight. Keep it tight.
-- CTA: A friendly call to action for the last slide. Under 15 words.
+- CTA: A friendly call to action for the last slide. Under 10 words.
 
 Respond in this EXACT format:
-HOOK: [5-10 words]
+HOOK: [6-12 words]
+HOOK_ACCENT: [3-5 words from the hook]
 SUBTITLE: [under 12 words]
 SLIDE1_TITLE: [3-6 words]
 SLIDE1_BODY: [1-2 sentences]
@@ -39,7 +42,7 @@ SLIDE4_TITLE: [3-6 words]
 SLIDE4_BODY: [1-2 sentences]
 SLIDE5_TITLE: [3-6 words]
 SLIDE5_BODY: [1-2 sentences]
-CTA: [under 15 words]`;
+CTA: [under 10 words]`;
 
   const result = execFileSync(
     "claude",
@@ -53,6 +56,7 @@ CTA: [under 15 words]`;
   ).trim();
 
   const hookMatch = result.match(/HOOK:\s*(.+)/);
+  const hookAccentMatch = result.match(/HOOK_ACCENT:\s*(.+)/);
   const subtitleMatch = result.match(/SUBTITLE:\s*(.+)/);
   const ctaMatch = result.match(/CTA:\s*(.+)/);
 
@@ -71,6 +75,7 @@ CTA: [under 15 words]`;
 
   return {
     hook: hookMatch?.[1]?.trim() || topic.slice(0, 50),
+    hookAccent: hookAccentMatch?.[1]?.trim() || undefined,
     subtitle: subtitleMatch?.[1]?.trim() || "A practical breakdown",
     slides: slides.length > 0
       ? slides

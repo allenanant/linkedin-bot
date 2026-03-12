@@ -7,18 +7,19 @@ import path from "path";
 // ── Types ──────────────────────────────────────────────────────────
 
 export interface CarouselData {
-  hook: string; // Bold headline for slide 1
-  subtitle: string; // Subtitle under hook
-  slides: CarouselSlide[]; // 4-6 content slides
-  ctaText?: string; // CTA on last slide
+  hook: string; // Full hook text
+  hookAccent?: string; // Phrase within hook to render in gold (if not set, last ~4 words are gold)
+  subtitle: string;
+  slides: CarouselSlide[];
+  ctaText?: string;
   authorName?: string;
   brandName?: string;
 }
 
 interface CarouselSlide {
   number: number;
-  title: string; // Short bold title (3-6 words)
-  body: string; // 1-2 sentence explanation
+  title: string;
+  body: string;
 }
 
 // ── Font loading ───────────────────────────────────────────────────
@@ -50,19 +51,15 @@ const fonts = [
 const W = 1080;
 const H = 1350;
 
-// ── Brand colors ───────────────────────────────────────────────────
+// ── Nick Saraev-inspired palette ───────────────────────────────────
 
 const C = {
-  bg: "#0a0a12",
-  bgLight: "#111120",
-  white: "#ffffff",
-  offWhite: "#e8e8f0",
-  gray: "#888899",
-  accent: "#6c63ff", // Purple accent
-  accentLight: "#8b83ff",
-  accentGlow: "rgba(108, 99, 255, 0.15)",
-  border: "#1e1e30",
-  subtle: "#444455",
+  bg: "#0c0c0c",
+  white: "#f5f0e8",
+  gold: "#c8a97e",
+  gray: "#6b6b6b",
+  subtle: "#3a3a3a",
+  arrow: "#8a8a8a",
 };
 
 // ── Load headshot as base64 ────────────────────────────────────────
@@ -74,88 +71,34 @@ function loadHeadshotBase64(): string | null {
   return `data:image/png;base64,${data.toString("base64")}`;
 }
 
+// ── Split hook into white + gold parts ─────────────────────────────
+
+function splitHook(hook: string, accent?: string): { white: string; gold: string } {
+  if (accent) {
+    const idx = hook.toLowerCase().indexOf(accent.toLowerCase());
+    if (idx !== -1) {
+      return {
+        white: hook.slice(0, idx).trim(),
+        gold: hook.slice(idx, idx + accent.length).trim(),
+      };
+    }
+  }
+  // Fallback: last ~4 words become gold
+  const words = hook.split(/\s+/);
+  const splitAt = Math.max(1, words.length - 4);
+  return {
+    white: words.slice(0, splitAt).join(" "),
+    gold: words.slice(splitAt).join(" "),
+  };
+}
+
 // ══════════════════════════════════════════════════════════════════
-// SLIDE 1: Cover slide - Hook + Author photo
+// COVER SLIDE - Big hook + large face photo from bottom
 // ══════════════════════════════════════════════════════════════════
 
 function buildCoverSlide(data: CarouselData): any {
   const headshot = loadHeadshotBase64();
-
-  const authorSection = headshot
-    ? {
-        type: "div",
-        props: {
-          style: {
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 20,
-            marginBottom: 48,
-          },
-          children: [
-            {
-              type: "img",
-              props: {
-                src: headshot,
-                width: 80,
-                height: 80,
-                style: {
-                  borderRadius: 40,
-                  border: `3px solid ${C.accent}`,
-                },
-              },
-            },
-            {
-              type: "div",
-              props: {
-                style: { display: "flex", flexDirection: "column", gap: 4 },
-                children: [
-                  {
-                    type: "div",
-                    props: {
-                      style: {
-                        display: "flex",
-                        fontSize: 22,
-                        fontWeight: 600,
-                        color: C.white,
-                      },
-                      children: data.authorName || "Allen Anant Thomas",
-                    },
-                  },
-                  {
-                    type: "div",
-                    props: {
-                      style: {
-                        display: "flex",
-                        fontSize: 16,
-                        color: C.gray,
-                      },
-                      children:
-                        data.brandName || "The Growth Engine",
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        },
-      }
-    : {
-        type: "div",
-        props: {
-          style: {
-            display: "flex",
-            fontSize: 18,
-            fontWeight: 600,
-            color: C.accent,
-            letterSpacing: 3,
-            marginBottom: 48,
-          },
-          children: (
-            data.brandName || "THE GROWTH ENGINE"
-          ).toUpperCase(),
-        },
-      };
+  const { white: hookWhite, gold: hookGold } = splitHook(data.hook, data.hookAccent);
 
   return {
     type: "div",
@@ -166,95 +109,104 @@ function buildCoverSlide(data: CarouselData): any {
         width: W,
         height: H,
         backgroundColor: C.bg,
-        fontFamily: "Inter",
-        padding: "80px 72px",
-        justifyContent: "center",
+        fontFamily: "Poppins",
+        position: "relative",
+        overflow: "hidden",
       },
       children: [
-        // Author section
-        authorSection,
-        // Accent line
+        // Hook text - top left
         {
           type: "div",
           props: {
             style: {
               display: "flex",
-              width: 60,
-              height: 4,
-              backgroundColor: C.accent,
-              borderRadius: 2,
-              marginBottom: 36,
+              flexDirection: "column",
+              padding: "72px 64px 0 64px",
+              zIndex: 2,
             },
+            children: [
+              // White part of hook
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    fontSize: 72,
+                    fontWeight: 700,
+                    color: C.white,
+                    lineHeight: 1.1,
+                  },
+                  children: hookWhite,
+                },
+              },
+              // Gold part of hook
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    fontSize: 72,
+                    fontWeight: 700,
+                    color: C.gold,
+                    lineHeight: 1.1,
+                    fontStyle: "italic",
+                  },
+                  children: hookGold,
+                },
+              },
+            ],
           },
         },
-        // Hook headline
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              fontSize: 56,
-              fontWeight: 700,
-              fontFamily: "Poppins",
-              color: C.white,
-              lineHeight: 1.15,
-              marginBottom: 24,
-            },
-            children: data.hook,
-          },
-        },
-        // Subtitle
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              fontSize: 24,
-              color: C.offWhite,
-              fontWeight: 400,
-              lineHeight: 1.5,
-            },
-            children: data.subtitle,
-          },
-        },
-        // Swipe hint at bottom
+        // Headshot - large, bottom center
+        ...(headshot
+          ? [
+              {
+                type: "img",
+                props: {
+                  src: headshot,
+                  width: 700,
+                  height: 700,
+                  style: {
+                    position: "absolute",
+                    bottom: 0,
+                    left: 190,
+                    zIndex: 1,
+                    objectFit: "cover",
+                  },
+                },
+              },
+              // Gradient fade over top of headshot
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    position: "absolute",
+                    bottom: 350,
+                    left: 0,
+                    width: W,
+                    height: 400,
+                    background: `linear-gradient(to bottom, ${C.bg} 0%, ${C.bg}00 100%)`,
+                    zIndex: 1,
+                  },
+                },
+              },
+            ]
+          : []),
+        // Arrow - bottom right
         {
           type: "div",
           props: {
             style: {
               display: "flex",
               position: "absolute",
-              bottom: 60,
-              right: 72,
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 8,
+              bottom: 48,
+              right: 56,
+              fontSize: 36,
+              color: C.arrow,
+              zIndex: 3,
             },
-            children: [
-              {
-                type: "div",
-                props: {
-                  style: {
-                    display: "flex",
-                    fontSize: 16,
-                    color: C.subtle,
-                    fontWeight: 400,
-                  },
-                  children: "Swipe",
-                },
-              },
-              {
-                type: "div",
-                props: {
-                  style: {
-                    display: "flex",
-                    fontSize: 20,
-                    color: C.accent,
-                  },
-                  children: "->",
-                },
-              },
-            ],
+            children: "\u2192",
           },
         },
       ],
@@ -263,13 +215,10 @@ function buildCoverSlide(data: CarouselData): any {
 }
 
 // ══════════════════════════════════════════════════════════════════
-// CONTENT SLIDE: Number + Title + Body
+// CONTENT SLIDE - Clean, bold, minimal
 // ══════════════════════════════════════════════════════════════════
 
-function buildContentSlide(
-  slide: CarouselSlide,
-  totalSlides: number
-): any {
+function buildContentSlide(slide: CarouselSlide, totalSlides: number): any {
   return {
     type: "div",
     props: {
@@ -280,38 +229,26 @@ function buildContentSlide(
         height: H,
         backgroundColor: C.bg,
         fontFamily: "Inter",
-        padding: "80px 72px",
+        padding: "100px 72px",
         justifyContent: "center",
+        position: "relative",
       },
       children: [
-        // Large number
+        // Slide number - large gold
         {
           type: "div",
           props: {
             style: {
               display: "flex",
-              fontSize: 120,
+              fontSize: 140,
               fontWeight: 700,
               fontFamily: "Poppins",
-              color: C.accent,
+              color: C.gold,
               lineHeight: 1,
-              marginBottom: 24,
+              marginBottom: 16,
+              opacity: 0.9,
             },
-            children: `0${slide.number}`,
-          },
-        },
-        // Accent line
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              width: 60,
-              height: 4,
-              backgroundColor: C.accent,
-              borderRadius: 2,
-              marginBottom: 36,
-            },
+            children: `${slide.number < 10 ? "0" : ""}${slide.number}`,
           },
         },
         // Title
@@ -320,24 +257,24 @@ function buildContentSlide(
           props: {
             style: {
               display: "flex",
-              fontSize: 44,
+              fontSize: 48,
               fontWeight: 700,
               fontFamily: "Poppins",
               color: C.white,
               lineHeight: 1.2,
-              marginBottom: 28,
+              marginBottom: 32,
             },
             children: slide.title,
           },
         },
-        // Body text
+        // Body
         {
           type: "div",
           props: {
             style: {
               display: "flex",
-              fontSize: 26,
-              color: C.offWhite,
+              fontSize: 28,
+              color: C.arrow,
               fontWeight: 400,
               lineHeight: 1.6,
               maxWidth: 880,
@@ -345,45 +282,19 @@ function buildContentSlide(
             children: slide.body,
           },
         },
-        // Page indicator at bottom
+        // Arrow - bottom right
         {
           type: "div",
           props: {
             style: {
               display: "flex",
               position: "absolute",
-              bottom: 60,
-              left: 72,
-              right: 72,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
+              bottom: 48,
+              right: 56,
+              fontSize: 36,
+              color: C.arrow,
             },
-            children: [
-              {
-                type: "div",
-                props: {
-                  style: {
-                    display: "flex",
-                    fontSize: 14,
-                    color: C.subtle,
-                    letterSpacing: 1,
-                  },
-                  children: "thegrowthengine.net",
-                },
-              },
-              {
-                type: "div",
-                props: {
-                  style: {
-                    display: "flex",
-                    fontSize: 16,
-                    color: C.subtle,
-                  },
-                  children: `${slide.number + 1} / ${totalSlides}`,
-                },
-              },
-            ],
+            children: "\u2192",
           },
         },
       ],
@@ -392,10 +303,10 @@ function buildContentSlide(
 }
 
 // ══════════════════════════════════════════════════════════════════
-// CTA SLIDE: Follow + Branding
+// CTA SLIDE - Follow + face
 // ══════════════════════════════════════════════════════════════════
 
-function buildCtaSlide(data: CarouselData, totalSlides: number): any {
+function buildCtaSlide(data: CarouselData): any {
   const headshot = loadHeadshotBase64();
 
   return {
@@ -408,24 +319,24 @@ function buildCtaSlide(data: CarouselData, totalSlides: number): any {
         height: H,
         backgroundColor: C.bg,
         fontFamily: "Inter",
-        padding: "80px 72px",
+        padding: "100px 72px",
         justifyContent: "center",
         alignItems: "center",
+        position: "relative",
       },
       children: [
-        // Headshot (if available)
+        // Headshot circle
         ...(headshot
           ? [
               {
                 type: "img",
                 props: {
                   src: headshot,
-                  width: 120,
-                  height: 120,
+                  width: 160,
+                  height: 160,
                   style: {
-                    borderRadius: 60,
-                    border: `4px solid ${C.accent}`,
-                    marginBottom: 32,
+                    borderRadius: 80,
+                    marginBottom: 40,
                   },
                 },
               },
@@ -437,10 +348,11 @@ function buildCtaSlide(data: CarouselData, totalSlides: number): any {
           props: {
             style: {
               display: "flex",
-              fontSize: 32,
+              fontSize: 36,
               fontWeight: 700,
+              fontFamily: "Poppins",
               color: C.white,
-              marginBottom: 8,
+              marginBottom: 12,
             },
             children: data.authorName || "Allen Anant Thomas",
           },
@@ -451,25 +363,11 @@ function buildCtaSlide(data: CarouselData, totalSlides: number): any {
           props: {
             style: {
               display: "flex",
-              fontSize: 20,
+              fontSize: 22,
               color: C.gray,
-              marginBottom: 48,
+              marginBottom: 56,
             },
             children: data.brandName || "The Growth Engine",
-          },
-        },
-        // Accent line
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              width: 60,
-              height: 4,
-              backgroundColor: C.accent,
-              borderRadius: 2,
-              marginBottom: 48,
-            },
           },
         },
         // CTA text
@@ -478,17 +376,17 @@ function buildCtaSlide(data: CarouselData, totalSlides: number): any {
           props: {
             style: {
               display: "flex",
-              fontSize: 42,
+              fontSize: 44,
               fontWeight: 700,
               fontFamily: "Poppins",
-              color: C.white,
+              color: C.gold,
               textAlign: "center",
               lineHeight: 1.3,
               maxWidth: 800,
               marginBottom: 24,
             },
             children:
-              data.ctaText || "Found this useful? Follow for more AI marketing tips.",
+              data.ctaText || "Follow for more",
           },
         },
         // Sub-CTA
@@ -497,26 +395,11 @@ function buildCtaSlide(data: CarouselData, totalSlides: number): any {
           props: {
             style: {
               display: "flex",
-              fontSize: 22,
-              color: C.offWhite,
+              fontSize: 24,
+              color: C.arrow,
               textAlign: "center",
             },
-            children: "Like + Save + Share if it helped.",
-          },
-        },
-        // Footer
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              position: "absolute",
-              bottom: 60,
-              fontSize: 14,
-              color: C.subtle,
-              letterSpacing: 1,
-            },
-            children: "thegrowthengine.net",
+            children: "Like + Save + Repost if this helped",
           },
         },
       ],
@@ -540,44 +423,32 @@ async function renderSlide(element: any): Promise<Buffer> {
 export async function renderCarouselPdf(
   data: CarouselData
 ): Promise<Buffer> {
-  const totalSlides = data.slides.length + 2; // cover + content + CTA
+  const totalSlides = data.slides.length + 2;
 
-  // Build all slide elements
   const slideElements: any[] = [
     buildCoverSlide(data),
     ...data.slides.map((s) => buildContentSlide(s, totalSlides)),
-    buildCtaSlide(data, totalSlides),
+    buildCtaSlide(data),
   ];
 
-  // Render each slide to PNG
   console.log(`  [Carousel] Rendering ${slideElements.length} slides...`);
   const pngBuffers: Buffer[] = [];
   for (let i = 0; i < slideElements.length; i++) {
-    console.log(
-      `  [Carousel] Slide ${i + 1}/${slideElements.length}...`
-    );
+    console.log(`  [Carousel] Slide ${i + 1}/${slideElements.length}...`);
     pngBuffers.push(await renderSlide(slideElements[i]));
   }
 
-  // Combine PNGs into a multi-page PDF
   console.log("  [Carousel] Assembling PDF...");
   const pdfDoc = await PDFDocument.create();
 
   for (const pngBuf of pngBuffers) {
     const pngImage = await pdfDoc.embedPng(pngBuf);
     const page = pdfDoc.addPage([W, H]);
-    page.drawImage(pngImage, {
-      x: 0,
-      y: 0,
-      width: W,
-      height: H,
-    });
+    page.drawImage(pngImage, { x: 0, y: 0, width: W, height: H });
   }
 
   const pdfBytes = await pdfDoc.save();
-  console.log(
-    `  [Carousel] PDF ready: ${pdfBytes.length} bytes, ${pngBuffers.length} pages`
-  );
+  console.log(`  [Carousel] PDF ready: ${pdfBytes.length} bytes, ${pngBuffers.length} pages`);
 
   return Buffer.from(pdfBytes);
 }
