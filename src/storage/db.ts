@@ -10,6 +10,10 @@ export async function initDb(): Promise<void> {
     connectionString: config.database.url,
     ssl: { rejectUnauthorized: false },
     max: 5,
+    idleTimeoutMillis: 0,
+    connectionTimeoutMillis: 10000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000,
   });
 
   await pool.query(`
