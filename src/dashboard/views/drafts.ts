@@ -3,7 +3,7 @@ import { layout } from "./layout";
 interface Draft {
   id: number;
   content: string;
-  image_data: Buffer | null;
+  has_image: boolean;
   created_at: string;
 }
 
@@ -43,7 +43,7 @@ export function draftsPage(drafts: Draft[], meta?: { draftCount?: number }): str
           </div>
           <span class="badge badge-draft">draft</span>
         </div>
-        ${d.image_data ? `<div class="draft-image"><img src="/api/posts/${d.id}/image" alt="Post image" loading="lazy"></div>` : ""}
+        ${d.has_image ? `<div class="draft-image"><img src="/api/posts/${d.id}/image" alt="Post image" loading="lazy"></div>` : ""}
         <div class="draft-content">
           <textarea class="draft-textarea" id="draft-content-${d.id}" rows="8" oninput="updateCharCount(this)">${escapeHtml(d.content)}</textarea>
           <div class="char-count" id="char-count-${d.id}">${d.content.length} / 3,000</div>

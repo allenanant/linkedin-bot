@@ -4,7 +4,7 @@ interface Post {
   id: number;
   content: string;
   status: string;
-  image_data: Buffer | null;
+  has_image: boolean;
   linkedin_post_id: string | null;
   created_at: string;
   posted_at: string | null;
@@ -57,7 +57,7 @@ export function postDetailPage(post: Post, meta?: { draftCount?: number }): stri
           </div>
         </div>
         <div class="post-text">${escapeHtml(post.content).replace(/\n/g, "<br>")}</div>
-        ${post.image_data ? `
+        ${post.has_image ? `
         <div class="post-image-full" style="margin-top: 18px">
           <img src="/api/posts/${post.id}/image" alt="Post image" class="detail-image">
         </div>` : ""}

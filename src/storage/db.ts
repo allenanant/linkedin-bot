@@ -79,7 +79,7 @@ export async function markPostPublished(postId: number, linkedinPostId: string) 
 
 export async function getRecentPosts(limit = 10): Promise<any[]> {
   const result = await pool.query(
-    `SELECT * FROM posts ORDER BY created_at DESC LIMIT $1`,
+    `SELECT id, content, status, created_at, posted_at FROM posts ORDER BY created_at DESC LIMIT $1`,
     [limit]
   );
   return result.rows;
@@ -103,19 +103,19 @@ export async function saveResearchCache(type: string, data: any) {
 
 export async function getAllPosts(page = 1, limit = 20, status?: string): Promise<{ posts: any[]; total: number }> {
   const offset = (page - 1) * limit;
-  let query = `SELECT p.* FROM posts p`;
+  let query = `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image FROM posts`;
   let countQuery = `SELECT COUNT(*) as count FROM posts`;
   const params: any[] = [];
   const countParams: any[] = [];
 
   if (status) {
-    query += ` WHERE p.status = $1`;
+    query += ` WHERE status = $1`;
     countQuery += ` WHERE status = $1`;
     params.push(status);
     countParams.push(status);
   }
 
-  query += ` ORDER BY p.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
+  query += ` ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
   params.push(limit, offset);
 
   const [postsResult, countResult] = await Promise.all([
@@ -127,7 +127,10 @@ export async function getAllPosts(page = 1, limit = 20, status?: string): Promis
 }
 
 export async function getPostById(id: number): Promise<any> {
-  const result = await pool.query(`SELECT * FROM posts WHERE id = $1`, [id]);
+  const result = await pool.query(
+    `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image FROM posts WHERE id = $1`,
+    [id]
+  );
   return result.rows[0] || null;
 }
 
@@ -139,14 +142,21 @@ export async function getPostImage(id: number): Promise<{ data: Buffer; mime: st
 
 export async function getDraftPosts(): Promise<any[]> {
   const result = await pool.query(
-    `SELECT * FROM posts WHERE status = 'draft' ORDER BY created_at DESC`
+    `SELECT id, content, created_at, (image_data IS NOT NULL) as has_image FROM posts WHERE status = 'draft' ORDER BY created_at DESC`
   );
   return result.rows;
 }
 
+export async function getDraftCount(): Promise<number> {
+  const result = await pool.query(
+    `SELECT COUNT(*) as count FROM posts WHERE status = 'draft'`
+  );
+  return parseInt(result.rows[0].count, 10);
+}
+
 export async function getApprovedPosts(): Promise<any[]> {
   const result = await pool.query(
-    `SELECT * FROM posts WHERE status = 'approved' ORDER BY created_at ASC`
+    `SELECT id, content, image_path, image_prompt, status, created_at, (image_data IS NOT NULL) as has_image FROM posts WHERE status = 'approved' ORDER BY created_at ASC`
   );
   return result.rows;
 }

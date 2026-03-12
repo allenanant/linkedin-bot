@@ -3,6 +3,7 @@ import {
   getAllPosts,
   getPostById,
   getDraftPosts,
+  getDraftCount,
   getPostCounts,
   getLatestTip,
 } from "../../storage/db";
@@ -16,16 +17,6 @@ const router = Router();
 function paramStr(val: string | string[] | undefined): string {
   if (Array.isArray(val)) return val[0] || "";
   return val || "";
-}
-
-// Helper to get draft count for sidebar badge
-async function getDraftCount(): Promise<number> {
-  try {
-    const drafts = await getDraftPosts();
-    return drafts.length;
-  } catch {
-    return 0;
-  }
 }
 
 // GET / - Overview page

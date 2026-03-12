@@ -94,7 +94,7 @@ export function layout(title: string, content: string, activePage: string, meta?
   </nav>
 
   <div id="toast-container"></div>
-  <script src="/public/dashboard.js"></script>
+  <script defer src="/public/dashboard.js"></script>
 </body>
 </html>`;
 }

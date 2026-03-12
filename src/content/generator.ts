@@ -228,8 +228,12 @@ Brainstorm these SPECIFIC things:
    c. A data-backed breakdown that changes how they think
    d. A short story with a twist and a lesson
 
-4. CTA — End with: "Comment '[KEYWORD]' and I'll send you my AI prompt pack for [specific use case related to the topic]"
-   Pick a punchy 1-word keyword like: PROMPTS, AI, SCALE, GROWTH, SPEED, LAUNCH
+4. CTA — Pick ONE of these ending styles. DO NOT always use the same one:
+   a. QUESTION CTA: End with a genuine question that makes people share their experience. "What's your biggest AI mistake so far?"
+   b. OPINION CTA: End with a polarizing statement that forces people to agree or disagree. "If you're still doing X manually, you're leaving money on the table."
+   c. STORY CTA: End by asking people to share their own version. "Drop your worst marketing automation horror story below."
+   d. RESOURCE CTA: "Want my [specific resource]? Comment [KEYWORD] and I'll send it over." Only use this if the post has a genuinely useful resource to offer. Not every post needs this.
+   e. SIMPLE CTA: Just end with a strong final line. No ask. Let the content speak for itself.
 
 5. SPICE — What opinion about this topic would get Allen the most comments? What would people ARGUE about?
 
@@ -263,15 +267,19 @@ LINE 2 — BLANK LINE
 
 LINE 3 — THE REHOOK: Slams the door behind the reader. Crushes their objection to keep reading. Adds a twist. Makes it IMPOSSIBLE to scroll past.
 
-LINE 4+ — THE MEAT: Deliver the actual value. Options:
-- 3-5 numbered tactical steps — each step is 1-2 SHORT lines
-- A specific AI prompt or workflow they can screenshot
-- A mini-story with a twist and lesson
-- A data breakdown that changes how they think
+LINE 4+ — THE MEAT: Deliver the actual value. Each variation MUST use a DIFFERENT structure:
+- VARIATION 1: Numbered tactical steps. 3-5 steps, each 1-2 short lines.
+- VARIATION 2: Story format. A real mini-story with a twist, lesson, and personal touch. NO numbered lists.
+- VARIATION 3: Opinion/observation format. Build an argument line by line. No lists, no steps. Just punchy reasoning that leads to a sharp conclusion.
 
-LAST 3 LINES — THE CTA:
-"Comment '[KEYWORD]' and I'll send you my AI prompt pack for [specific thing related to the topic]."
-"Follow me for more AI marketing breakdowns."
+LAST 2-3 LINES — THE CTA:
+Pick a DIFFERENT ending style for each variation. Options:
+a. A genuine question that sparks discussion: "What's the dumbest thing you've automated?"
+b. A polarizing opinion that forces a reaction: "If you disagree, I'd love to hear why."
+c. Ask people to share their experience: "What's your version of this?"
+d. A resource offer ONLY if there's something real to give: "Want my [specific thing]? Comment [KEYWORD] and I'll send it over."
+e. Just end with a strong final line. No ask at all.
+DO NOT use the "Comment KEYWORD" format on more than 1 variation.
 
 ═══ FORMATTING RULES ═══
 - One thought per line. NEVER more than 15 words on a single line.
@@ -386,7 +394,7 @@ Take the best variation and make these final tweaks:
 - If any line is filler, delete it
 - If any line sounds like AI, rewrite it in Allen's voice
 - Make sure the post is 150-300 words. Tight. No padding.
-- The CTA should mention the AI prompt pack and feel casual
+- The CTA should feel natural. NOT every post needs "Comment KEYWORD." If the post ends with a strong question or opinion, that's fine.
 - Add one moment of personality if missing — humor, frustration, or a bold opinion
 
 Respond in this format:
@@ -425,7 +433,7 @@ ${post}
 14. HOOK: Is line 1 under 12 words? Would YOU stop scrolling?
 15. REHOOK: Does line 3 make it impossible to scroll past?
 16. VALUE: Does every line in the middle add value? Cut any filler.
-17. CTA: Does it end with "Comment '[KEYWORD]' and I'll send you my AI prompt pack for [specific thing]"?
+17. CTA: Does the post end strong? It can be a question, a bold opinion, a resource offer, or just a mic-drop line. NOT every post needs "Comment KEYWORD." If the ending feels forced or formulaic, rewrite it.
 18. LENGTH: 150-300 words? If over 300, cut the fat.
 
 ═══ FINAL TEST ═══
