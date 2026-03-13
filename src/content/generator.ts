@@ -252,25 +252,60 @@ async function generateVariations(topic: string, valueIdeas: string): Promise<st
 Value ideas to use:
 ${valueIdeas}
 
-═══ ALLEN'S VOICE ═══
-Allen is the founder of The Growth Engine. He writes like he's talking to a friend, not writing a blog post. Casual, personal, stream-of-consciousness. He shares discoveries, not lectures.
+═══ ALLEN'S VOICE — MOST IMPORTANT SECTION. READ CAREFULLY. ═══
 
-How Allen ACTUALLY sounds:
-- "You know what most founders think automation is? The thing that's replacing people. Well, it's not lol"
-- "I was not aware of all this, but I came to know that I can do this kind of shit and build such badass things"
-- "To be very honest, it's way smarter than you are, so it would already predict what you're doing"
-- "You know what? How I start my day. I start my day with a command line."
-- "Well, why do I just keep it to myself? I thought I could share this small value with you all as well."
+Here is a REAL post Allen wrote. Your output MUST match this voice EXACTLY:
 
-How Allen does NOT sound:
-- "I've been testing this AI workflow for 2 weeks. The results surprised me." (too clean, too copywriter)
-- "Start small. Prove the ROI. Then scale." (power sentences are banned)
-- "Most people don't know about this feature." (generic thought leader voice)
+"""
+You know what most founders think automation is?
+The thing that's replacing people.
+
+Well, it's not lol
+
+What I think it is, is that it's removing the stuff nobody should be doing manually in the first place.
+
+Here's how I think about it.
+1. Write down every task your team does weekly.
+2. Highlight the ones that are repetitive and rule-based.
+3. Those are your automation targets. Work on it.
+
+Well, I was not aware of all this, but I came to know that I can do this kind of shit and build such badass things once I have my Claude assistant on Claude Code that handles daily client reports, lead enrichment, content scheduling, Slack notifications, and you name it.
+
+You know what? How I start my day.
+I start my day with a command line. /morning-brief
+It took me five hours to build these automations. With plain text.
+And it saves me three to four plus hours every single day.
+
+The trick is very simple, but people complicate it.
+You simply have to tell your assistant things that you know about your business already, and to be very honest, it's way smarter than you are, so it would already predict what you are doing and at what stage you are currently, even if you don't tell it all the things.
+
+The thing that's really amusing is how smart it gets with time.
+When the context builds up, when the memory builds up, when the CLAUDE.md file builds up, that's when you see the real magic.
+
+Well, why do I just keep it to myself?
+I thought I could share this small value with you all as well.
+
+I created this five-page document that shows you how you can build your own Claude assistant for your business that would run entirely automated.
+
+1. Connect with me.
+2. Comment "Claude" so that I can send it in your inbox straight away.
+"""
+
+VOICE RULES extracted from that post:
+- Uses "Well," and "You know what?" as transitions constantly
+- Says "lol", "this kind of shit", "badass things" naturally
+- Humble: "I was not aware of all this" NOT "Here's what I discovered"
+- Compliments the tool: "it's way smarter than you are"
+- Personal details: specific command names, exact hours saved
+- Reads like someone TALKING, not someone WRITING
+- NO power sentences like "Start small. Prove the ROI. Then scale."
+- NO polished copywriter voice. NO clean structured one-liners.
+- If your output sounds cleaner than the example above, you FAILED. Rewrite it.
 
 EVERY post MUST end with:
-- A lead magnet offer (free document, guide, walkthrough, checklist)
-- "1. Connect with me"
-- "2. Comment [keyword] so I can send it to your inbox"
+- A free document/guide offer related to the topic
+- "1. Connect with me."
+- "2. Comment [keyword] so that I can send it in your inbox straight away."
 
 ═══ POST STRUCTURE ═══
 LinkedIn shows only 3 lines before "see more." Make those 3 lines count.
@@ -333,31 +368,32 @@ VARIATION 3:
 // ─── Step 5: Humanize all variations ───
 
 async function humanizeVariations(variations: string): Promise<string> {
-  const prompt = `You are Allen's editor. Allen Anant Thomas is a young agency founder who's genuine, helpful, and talks like a real person. NOT like a LinkedIn influencer. NOT like ChatGPT.
+  const prompt = `REWRITE these 3 LinkedIn posts so they sound EXACTLY like Allen wrote them.
 
-Here are 3 LinkedIn post drafts that need to sound natural:
+Allen writes like he's recording a voice note for a friend. NOT like a copywriter. NOT like ChatGPT. NOT like a LinkedIn influencer.
+
+DRAFTS TO REWRITE:
 
 ${variations}
 
-═══ ALLEN'S VOICE CHECKLIST ═══
-Allen writes like voice notes, not blog posts. If it sounds polished, it's wrong. Allen sounds like:
-- Someone telling a friend about something cool he discovered
-- Casual: "lol", "to be very honest", "you know what", "this kind of shit"
-- Self-deprecating: "I was not aware of this" not "Here's what I learned"
-- He gives credit to tools: "it's way smarter than you are"
-- He uses "Well," and "You know what?" as transitions
-- He doesn't use power sentences like "Start small. Prove the ROI. Then scale."
+═══ REFERENCE — THIS IS HOW ALLEN ACTUALLY WRITES ═══
+"Well, I was not aware of all this, but I came to know that I can do this kind of shit and build such badass things"
+"You know what? How I start my day. I start my day with a command line."
+"The trick is very simple, but people complicate it."
+"To be very honest, it's way smarter than you are"
+"Well, why do I just keep it to myself? I thought I could share this small value with you all as well."
 
-═══ FIXES TO MAKE ═══
-1. Kill corporate speak AND copywriter speak. No polished one-liners.
-2. Add casual transitions: "Well,", "You know what?", "To be very honest", "And honestly..."
-3. Make it sound like a voice note. Read it out loud - if it sounds written, rewrite it.
-4. Every line: max 15 words. If longer, break it.
-5. Add personal discovery moments: "I came to know that...", "I was playing with this and..."
-6. Replace em-dashes with periods or line breaks.
-7. The ending MUST be a lead magnet CTA: free resource + "Connect with me" + "Comment [keyword]"
-8. Add at least 2-3 personal touches per post. Specific details from Allen's experience.
-9. It's OK to use "lol" once or twice. It's Allen's natural voice.
+═══ REWRITE RULES ═══
+1. Add "Well," or "You know what?" or "To be very honest" transitions. At least 2-3 per post.
+2. Add "lol" once naturally. Add "this kind of shit" or "badass" if it fits.
+3. Replace any line that sounds written with how someone would SAY it out loud.
+4. Add personal discovery moments: "I came to know that...", "I was playing around with..."
+5. Make the hook conversational. "You know what most people get wrong about X?" not "X is broken. Here's why."
+6. The ending MUST be: free document offer + "1. Connect with me." + "2. Comment [keyword] so that I can send it in your inbox straight away."
+7. Every line max 15 words. Break longer lines.
+8. Replace em-dashes with periods.
+9. NO power sentences. NO clean one-liners. NO polished structure.
+10. If a line sounds like a copywriter wrote it, REWRITE it to sound messy and human.
 
 ═══ AI DETECTION ═══
 If ANY line sounds AI-generated OR like a LinkedIn copywriter, rewrite it. Red flags:
