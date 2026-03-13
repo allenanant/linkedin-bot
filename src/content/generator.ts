@@ -415,40 +415,39 @@ BEST_POST:
 // ─── Step 7: Final quality review ───
 
 async function qualityReview(post: string, topic: string): Promise<string> {
-  const prompt = `Final quality review before this LinkedIn post goes live. Fix any issues and return the clean version.
+  const prompt = `You are a copy editor. Apply these fixes to this LinkedIn post and return ONLY the corrected post text.
 
-POST:
+POST TO FIX:
 ${post}
 
-═══ FORMATTING CHECKS ═══
-1. Every line starts at the left margin? NO indentation, NO tabs, NO leading spaces.
-2. Every line has only ONE thought? Max 15 words per line.
-3. No markdown? No **bold**, no *italic*, no #headers, no [links]().
-4. No parentheses ()? LinkedIn truncates them. Replace with periods.
-5. No em-dashes? Replace with periods or line breaks.
-6. No double spaces after numbers? "1. " not "1.  "
-7. Plain quotes only? No smart/curly quotes.
-8. No 3+ consecutive blank lines? Max 2 blank lines between sections.
+FIXES TO APPLY:
+- Remove any indentation, tabs, or leading spaces from every line
+- Max 15 words per line. Break longer lines.
+- Remove all markdown: **bold**, *italic*, #headers, [links]()
+- Replace parentheses () with periods
+- Replace em-dashes with periods or line breaks
+- Fix double spaces after numbers: "1. " not "1.  "
+- Replace smart/curly quotes with plain quotes
+- Max 2 blank lines between sections
+- Remove these AI words if present: delve, landscape, harness, unleash, robust, paradigm, synergy, leverage, tapestry, game-changer, thrilled, excited to announce, let that sink in, here's the thing, buckle up, at the end of the day, navigate, elevate, foster, facilitate, revolutionize, skyrocket, supercharge
+- No two consecutive lines should start with the same word
+- Remove anything preachy, condescending, or aggressive
+- Keep it 150-300 words
 
-═══ VOICE CHECKS ═══
-9. AI words? REMOVE: delve, landscape, harness, unleash, robust, paradigm, synergy, leverage, tapestry, game-changer, thrilled, excited to announce, let that sink in, here's the thing, buckle up, without further ado, at the end of the day, navigate, elevate, foster, facilitate, revolutionize, skyrocket, supercharge
-10. Does it sound natural? Like a real person sharing something useful? NOT corporate, NOT ChatGPT, NOT like a LinkedIn guru.
-11. No two consecutive lines start with the same word?
-12. Is the tone HELPFUL and HUMBLE? Remove anything that sounds preachy, condescending, aggressive, or rude. Allen NEVER puts others down.
-13. Is there at least one personal touch? Something that shows Allen is a real person.
-
-═══ STRUCTURE CHECKS ═══
-14. HOOK: Is line 1 under 12 words? Would you stop scrolling?
-15. VALUE: Does every line add genuine value? Cut any filler.
-16. ENDING: Does the post end naturally? Not forced or formulaic.
-17. LENGTH: 150-300 words? If over 300, cut the fat.
-
-═══ FINAL TEST ═══
-Read the post out loud. If any sentence sounds like a corporate blog, a motivational poster, a ChatGPT response, or a LinkedIn bro, rewrite it to sound like a helpful friend sharing what they know.
-
-Respond with ONLY the final post text. No labels, no explanations.`;
+CRITICAL: Your ENTIRE response must be the corrected post text and NOTHING else.
+Do NOT include any commentary, review notes, issue lists, or explanations.
+Do NOT start with "Here's the corrected..." or "A few issues..." or any preamble.
+Just output the post text, ready to publish.`;
 
   const reviewed = await callGemini(prompt);
+
+  // Safety: if Claude returned review notes instead of the post, fall back to original
+  const looksLikeReview = /^(a few issues|here are the|issues? (to |found)|fixes? (needed|applied)|review:|problems?:)/i.test(reviewed.trim());
+  if (looksLikeReview) {
+    console.log("  [QualityReview] Got review notes instead of clean post. Using pre-review version.");
+    return post;
+  }
+
   return stripMarkdown(reviewed);
 }
 
@@ -619,8 +618,8 @@ async function callGemini(prompt: string): Promise<string> {
       {
         input: prompt,
         encoding: "utf-8",
-        timeout: 120_000,
-        maxBuffer: 1024 * 1024,
+        timeout: 300_000,
+        maxBuffer: 2 * 1024 * 1024,
       }
     );
     const text = result.trim();
