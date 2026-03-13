@@ -216,6 +216,7 @@ const ContentSlide = ({
   author,
   brand,
 }: {
+  key?: React.Key;
   slide: CarouselSlide;
   totalSlides: number;
   pageIndex: number;
