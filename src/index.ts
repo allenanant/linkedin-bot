@@ -107,8 +107,8 @@ switch (command) {
     break;
   case "schedule":
     log("Starting daily batch scheduler...");
-    // Run once daily at the first scheduled time
-    const batchTime = config.bot.postTimes[0] || "09:00";
+    // Generate all 5 posts at 12:00 PM IST daily
+    const batchTime = "12:00";
     log(`Batch generation scheduled at ${batchTime} ${config.bot.timezone}`);
     scheduleDailyJobs([batchTime], config.bot.timezone, runDailyBatch);
     break;
