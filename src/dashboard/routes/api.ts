@@ -240,7 +240,7 @@ router.get("/api/tip", async (_req: Request, res: Response) => {
 });
 
 // Helper: generate post with PDF carousel (all post types use this now)
-async function createPostWithCarousel(style: string, res: Response) {
+async function createPostWithCarousel(style: "news" | "freebie", res: Response) {
   try {
     console.log(`[Dashboard] Creating ${style} post with carousel...`);
     const research = await runResearch();
