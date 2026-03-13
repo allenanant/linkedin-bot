@@ -78,39 +78,31 @@ async function runDailyPipeline() {
     const generated = await generateLinkedInPost(research, true);
     log(`Generated post about: ${generated.topic}`);
 
-    // Step 3: Decide format - carousel (40%) or image (60%)
-    const useCarousel = shouldGenerateCarousel();
+    // Step 3: Always generate PDF carousel
     let imagePath: string | null = null;
     let imageBuffer: Buffer | null = null;
     let pdfBuffer: Buffer | null = null;
     let postType = "text";
 
-    if (useCarousel) {
-      // Generate PDF carousel
-      log("Generating PDF carousel...");
-      try {
-        pdfBuffer = await generateCarousel(generated.content, generated.topic);
-        postType = "carousel";
-        log(`Carousel PDF generated: ${pdfBuffer.length} bytes`);
-      } catch (err: any) {
-        log(`Carousel generation failed: ${err.message}. Falling back to image.`);
-        pdfBuffer = null;
-      }
+    log("Generating PDF carousel...");
+    try {
+      pdfBuffer = await generateCarousel(generated.content, generated.topic);
+      postType = "carousel";
+      log(`Carousel PDF generated: ${pdfBuffer.length} bytes`);
+    } catch (err: any) {
+      log(`Carousel generation failed: ${err.message}. Falling back to image.`);
+      pdfBuffer = null;
     }
 
     if (!pdfBuffer && generated.imageData) {
-      // Generate regular image
-      log("Rendering image...");
+      // Fallback to image only if carousel fails
+      log("Rendering fallback image...");
       imagePath = await generateImage(generated.imageData);
-      if (!imagePath) {
-        log("Image rendering failed. Retrying once...");
-        imagePath = await generateImage(generated.imageData);
-      }
       if (imagePath) {
         imageBuffer = fs.readFileSync(imagePath);
         postType = "image";
       } else {
-        log("Image generation failed twice. Posting as text-only.");
+        log("Image generation also failed. Posting as text-only.");
       }
     }
 

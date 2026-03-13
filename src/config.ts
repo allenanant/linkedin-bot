@@ -31,7 +31,7 @@ export const config = {
   bot: {
     postTimes: optional("POST_TIMES", "09:00,13:00,19:00").split(",").map((t) => t.trim()),
     timezone: optional("TIMEZONE", "Asia/Kolkata"),
-    industryKeywords: optional("INDUSTRY_KEYWORDS", "AI,SaaS,software,marketing,ads").split(",").map((k) => k.trim()),
+    industryKeywords: optional("INDUSTRY_KEYWORDS", "AI,Claude,Anthropic,AI agents,AI automation,SaaS,AI tools").split(",").map((k) => k.trim()),
     imagePostPercentage: parseInt(optional("IMAGE_POST_PERCENTAGE", "40"), 10),
     autoPost: optional("AUTO_POST", "true") === "true",
   },
@@ -42,7 +42,7 @@ export const config = {
     port: parseInt(optional("DASHBOARD_PORT", "3000"), 10),
   },
   reddit: {
-    subreddits: optional("REDDIT_SUBREDDITS", "SaaS,marketing,artificial,webdev,entrepreneur,startups").split(",").map((s) => s.trim()),
+    subreddits: optional("REDDIT_SUBREDDITS", "artificial,LocalLLaMA,ClaudeAI,singularity,MachineLearning,SaaS,webdev,startups").split(",").map((s) => s.trim()),
     postsPerSubreddit: parseInt(optional("REDDIT_POSTS_PER_SUB", "5"), 10),
   },
   youtube: {

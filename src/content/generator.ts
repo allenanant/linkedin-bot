@@ -100,11 +100,16 @@ ${research.socialSearchResults
   const prompt = `You are picking a LinkedIn post topic for Allen Anant Thomas, founder of The Growth Engine, an AI-powered growth agency.
 
 ALLEN'S CONTENT STYLE:
-- Helpful, knowledgeable, and genuine. Shares what he's learning and building.
-- Audience: Business owners, founders, marketers who want practical AI marketing knowledge.
-- Content types: AI news & updates, practical tips & workflows, tool recommendations, real results he's seeing.
-- Core approach: "Here's something useful I found. Here's how you can use it too."
-- He's humble. He shares what works without putting others down.
+- Conversational, like talking to a friend. Stream-of-consciousness, not polished copywriting.
+- Uses casual language: "lol", "this kind of shit", "badass", "to be very honest"
+- Natural transitions: "You know what...", "Well,", "To be very honest"
+- Self-deprecating/humble: "I was not aware of all this" not "Here's what I learned"
+- Tells stories of discovery, not lectures. He's sharing what he found, not teaching from a podium.
+- Audience: Business owners, founders, marketers who want practical AI knowledge.
+- PRIMARY topics: AI news + use cases. "Here's something new, and here's exactly how you can use it."
+- SECONDARY topics (max 1 in 3 days): Marketing/agency advice.
+- Allen is pro-Claude/Anthropic. Never hype OpenAI/GPT. Gemini is fine to mention.
+- Every post MUST end with a lead magnet CTA: offer a free document/guide + "Connect with me" + "Comment [keyword] so I can send it"
 
 Your job: Find the SINGLE most useful and interesting topic for a LinkedIn post.
 ${redditSection}
@@ -127,15 +132,17 @@ AVOID THESE (already posted recently):
 ${recentTopics || "None yet"}
 
 TOPIC SELECTION RULES:
-1. FIRST: Reddit discussions. Real people asking real questions = content gold. High upvotes + comments = validated pain point.
-2. SECOND: Cross-reference with YouTube and social. If multiple platforms discuss the same problem, that's your topic.
-3. The topic MUST fit one of these angles:
-   a. NEWS UPDATE: A specific AI tool launch, update, or industry shift that marketers need to know about.
-   b. PRACTICAL TIP: A specific how-to that gives someone a result. Steps they can do today.
-   c. TOOL/WORKFLOW SHARE: A specific AI workflow, prompt, or tool that saves time or money.
-   d. INSIGHT/LEARNING: Something Allen learned from running campaigns that would help others.
-4. Be SPECIFIC. Not "how to use AI for marketing." Instead: "This 4-step AI workflow saved us 3 hours a day on ad copy. Here's how it works."
-5. Frame around practical outcomes: time saved, costs reduced, better results. Not hype.
+1. PRIORITY: AI news + use cases. What's NEW in AI this week? What can you BUILD with it? Allen's audience loves "here's something new, and here's exactly how you can use it."
+2. SECOND: Reddit discussions about AI tools, automation, building things. Real people experimenting = content gold.
+3. THIRD: Cross-reference with YouTube and social for trending AI topics.
+4. The topic MUST fit one of these angles:
+   a. AI NEWS + USE CASE: A specific AI launch/update + "here's what you can actually do with it" (THIS IS THE PRIMARY ANGLE)
+   b. BUILD SOMETHING COOL: A specific thing Allen built or discovered with AI tools (Claude Code, automation, etc.)
+   c. TOOL DISCOVERY: A new AI tool or feature + practical walkthrough of how to use it
+   d. MARKETING/AGENCY TIP: Only if no good AI news exists. Max 1 in 3 posts.
+5. Be SPECIFIC. Name the tool, the model, the feature. Not vague "AI is changing everything."
+6. IMPORTANT: Allen is pro-Claude/Anthropic. Prioritize Claude/Anthropic news. Never hype OpenAI/GPT models. Gemini is fine.
+7. Always think: "what's the USE CASE?" - don't just report news, show how it's useful.
 
 Respond with ONLY the topic in 1-2 sentences. Include the angle. Nothing else.`;
 
@@ -246,12 +253,24 @@ Value ideas to use:
 ${valueIdeas}
 
 ═══ ALLEN'S VOICE ═══
-Allen is the founder of The Growth Engine. He's knowledgeable, friendly, and genuine. He sounds like a helpful friend who's sharing what he's learned. He's confident but humble. He never puts others down or attacks anyone. He wants his audience to win.
+Allen is the founder of The Growth Engine. He writes like he's talking to a friend, not writing a blog post. Casual, personal, stream-of-consciousness. He shares discoveries, not lectures.
 
-How Allen sounds:
-- "I've been testing this AI workflow for 2 weeks. The results surprised me."
-- "Most people don't know about this feature. It's saved me hours."
-- "Here's the exact process I use. Feel free to steal it."
+How Allen ACTUALLY sounds:
+- "You know what most founders think automation is? The thing that's replacing people. Well, it's not lol"
+- "I was not aware of all this, but I came to know that I can do this kind of shit and build such badass things"
+- "To be very honest, it's way smarter than you are, so it would already predict what you're doing"
+- "You know what? How I start my day. I start my day with a command line."
+- "Well, why do I just keep it to myself? I thought I could share this small value with you all as well."
+
+How Allen does NOT sound:
+- "I've been testing this AI workflow for 2 weeks. The results surprised me." (too clean, too copywriter)
+- "Start small. Prove the ROI. Then scale." (power sentences are banned)
+- "Most people don't know about this feature." (generic thought leader voice)
+
+EVERY post MUST end with:
+- A lead magnet offer (free document, guide, walkthrough, checklist)
+- "1. Connect with me"
+- "2. Comment [keyword] so I can send it to your inbox"
 
 ═══ POST STRUCTURE ═══
 LinkedIn shows only 3 lines before "see more." Make those 3 lines count.
@@ -321,31 +340,33 @@ Here are 3 LinkedIn post drafts that need to sound natural:
 ${variations}
 
 ═══ ALLEN'S VOICE CHECKLIST ═══
-Read each line out loud. If it sounds corporate or AI-generated, rewrite it. Allen sounds like:
-- A helpful friend sharing something cool he found
-- Someone who's actually doing this work, not just talking about it
-- Genuine and approachable. Never preachy or condescending.
-- Casually confident. Knows his stuff without being arrogant about it.
+Allen writes like voice notes, not blog posts. If it sounds polished, it's wrong. Allen sounds like:
+- Someone telling a friend about something cool he discovered
+- Casual: "lol", "to be very honest", "you know what", "this kind of shit"
+- Self-deprecating: "I was not aware of this" not "Here's what I learned"
+- He gives credit to tools: "it's way smarter than you are"
+- He uses "Well," and "You know what?" as transitions
+- He doesn't use power sentences like "Start small. Prove the ROI. Then scale."
 
 ═══ FIXES TO MAKE ═══
-1. Kill corporate speak. "Utilize" -> "use". "Implement" -> "do". "Optimize" -> "fix".
-2. Add personal touches. "I've been testing this." "We tried this with a client." "I learned this the hard way."
-3. Make hooks SHORTER and more natural. If the hook is over 12 words, cut it.
+1. Kill corporate speak AND copywriter speak. No polished one-liners.
+2. Add casual transitions: "Well,", "You know what?", "To be very honest", "And honestly..."
+3. Make it sound like a voice note. Read it out loud - if it sounds written, rewrite it.
 4. Every line: max 15 words. If longer, break it.
-5. No two consecutive lines should start with the same word.
-6. Remove filler: "actually", "basically", "literally", "just", "simply" — unless they add something.
-7. Replace em-dashes with periods or line breaks.
-8. The ending should feel natural. Like you're talking to a friend, not selling.
-9. Add ONE personal touch per post. A real detail, something specific, a genuine reaction.
-10. Check the first 3 lines. They should make someone curious enough to click "see more."
+5. Add personal discovery moments: "I came to know that...", "I was playing with this and..."
+6. Replace em-dashes with periods or line breaks.
+7. The ending MUST be a lead magnet CTA: free resource + "Connect with me" + "Comment [keyword]"
+8. Add at least 2-3 personal touches per post. Specific details from Allen's experience.
+9. It's OK to use "lol" once or twice. It's Allen's natural voice.
 
 ═══ AI DETECTION ═══
-If ANY line sounds AI-generated, rewrite it. Common tells:
+If ANY line sounds AI-generated OR like a LinkedIn copywriter, rewrite it. Red flags:
+- Clean power sentences: "The trick isn't X. It's Y." (BANNED)
 - Starting with "In today's..." or "As a..."
 - Lists where every item follows the exact same sentence structure
-- Overly diplomatic, balanced statements. Real people have actual preferences.
-- Perfect grammar everywhere. Real people use fragments and casual phrasing.
-- Generic advice that could apply to anything. Allen gives specific, actionable advice.
+- Overly balanced statements. Allen has strong preferences (pro-Claude, anti-OpenAI).
+- Perfect grammar everywhere. Allen uses fragments, "lol", casual phrasing.
+- Generic hooks like "Most people don't know..." or "Here's what nobody tells you..."
 
 Return all 3 humanized variations:
 VARIATION 1:
@@ -594,7 +615,7 @@ async function callGemini(prompt: string): Promise<string> {
   try {
     const result = execFileSync(
       "claude",
-      ["-p", "--model", "sonnet", "--output-format", "text"],
+      ["-p", "--model", "opus", "--output-format", "text"],
       {
         input: prompt,
         encoding: "utf-8",

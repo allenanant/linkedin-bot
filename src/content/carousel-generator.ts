@@ -46,7 +46,7 @@ CTA: [under 10 words]`;
 
   const result = execFileSync(
     "claude",
-    ["-p", "--model", "sonnet", "--output-format", "text"],
+    ["-p", "--model", "opus", "--output-format", "text"],
     {
       input: prompt,
       encoding: "utf-8",
