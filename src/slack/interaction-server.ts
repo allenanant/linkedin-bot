@@ -1,212 +1,183 @@
-import express from "express";
-import crypto from "crypto";
+import { App } from "@slack/bolt";
 import { config } from "../config";
 import { initDb, getPostById, getPostPdf, getPostImage, markPostPublished, rejectPost, getSlackMessageRef } from "../storage/db";
-import { updateMessage, postThreadReply } from "./api";
 import { createTextPost, createImagePost, createDocumentPost } from "../linkedin/post";
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
 }
 
-function verifySlackSignature(signingSecret: string, timestamp: string, body: string, signature: string): boolean {
-  const baseString = `v0:${timestamp}:${body}`;
-  const hmac = crypto.createHmac("sha256", signingSecret).update(baseString).digest("hex");
-  const expected = `v0=${hmac}`;
-  return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature));
-}
-
-async function handleApprove(postId: number, channel: string, messageTs: string): Promise<string> {
-  const post = await getPostById(postId);
-  if (!post) return "Post not found.";
-  if (post.status !== "draft") return `Post #${postId} is already ${post.status}.`;
-
-  let linkedinPostId: string;
-
-  if (post.post_type === "carousel") {
-    const pdfData = await getPostPdf(postId);
-    if (pdfData) {
-      linkedinPostId = await createDocumentPost(
-        config.linkedin.accessToken,
-        config.linkedin.personUrn,
-        post.content,
-        pdfData
-      );
-    } else {
-      linkedinPostId = await createTextPost(
-        config.linkedin.accessToken,
-        config.linkedin.personUrn,
-        post.content
-      );
-    }
-  } else {
-    const imageRecord = await getPostImage(postId);
-    if (imageRecord && imageRecord.data) {
-      linkedinPostId = await createImagePost(
-        config.linkedin.accessToken,
-        config.linkedin.personUrn,
-        post.content,
-        imageRecord.data
-      );
-    } else {
-      linkedinPostId = await createTextPost(
-        config.linkedin.accessToken,
-        config.linkedin.personUrn,
-        post.content
-      );
-    }
-  }
-
-  await markPostPublished(postId, linkedinPostId);
-
-  // Update the Slack message to show it's published
-  const ref = await getSlackMessageRef(postId);
-  if (ref) {
-    await updateMessage(ref.channel, ref.ts, `Post #${postId} published`, [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*Post #${postId} published to LinkedIn*\nLinkedIn ID: \`${linkedinPostId}\``,
-        },
-      },
-      {
-        type: "context",
-        elements: [
-          { type: "mrkdwn", text: `Published at ${new Date().toLocaleString("en-US", { timeZone: config.bot.timezone })}` },
-        ],
-      },
-    ]);
-  }
-
-  return `Post #${postId} published to LinkedIn.`;
-}
-
-async function handleReject(postId: number): Promise<string> {
-  const post = await getPostById(postId);
-  if (!post) return "Post not found.";
-  if (post.status !== "draft") return `Post #${postId} is already ${post.status}.`;
-
-  await rejectPost(postId);
-
-  // Update the Slack message
-  const ref = await getSlackMessageRef(postId);
-  if (ref) {
-    await updateMessage(ref.channel, ref.ts, `Post #${postId} rejected`, [
-      {
-        type: "section",
-        text: {
-          type: "mrkdwn",
-          text: `*Post #${postId} rejected*`,
-        },
-      },
-      {
-        type: "context",
-        elements: [
-          { type: "mrkdwn", text: `Rejected at ${new Date().toLocaleString("en-US", { timeZone: config.bot.timezone })}` },
-        ],
-      },
-    ]);
-
-    // Ask for feedback in thread
-    await postThreadReply(
-      ref.channel,
-      ref.ts,
-      "What didn't you like about this one? Reply here so the bot can learn."
-    );
-  }
-
-  return `Post #${postId} rejected.`;
-}
-
-export async function startInteractionServer(): Promise<void> {
+async function startSlackApp() {
   await initDb();
 
-  const app = express();
-
-  // Slack sends interaction payloads as URL-encoded form data
-  // We need the raw body for signature verification
-  app.use("/slack/interactions", express.raw({ type: "application/x-www-form-urlencoded" }));
-  app.use(express.json());
-
-  // Health check
-  app.get("/health", (_req, res) => {
-    res.json({ status: "ok", service: "linkedin-bot-slack" });
+  const app = new App({
+    token: config.slack.botToken,
+    signingSecret: config.slack.signingSecret,
+    socketMode: true,
+    appToken: config.slack.appToken,
   });
 
-  // Slack interaction endpoint
-  app.post("/slack/interactions", async (req, res) => {
-    try {
-      const rawBody = req.body.toString();
-      const timestamp = req.headers["x-slack-request-timestamp"] as string;
-      const signature = req.headers["x-slack-signature"] as string;
+  // Handle Approve button
+  app.action("approve_post", async ({ ack, action, client, body }) => {
+    await ack();
 
-      // Verify signature
-      if (config.slack.signingSecret) {
-        const isValid = verifySlackSignature(config.slack.signingSecret, timestamp, rawBody, signature);
-        if (!isValid) {
-          log("Invalid Slack signature");
-          res.status(401).send("Invalid signature");
-          return;
+    const postId = parseInt((action as any).value, 10);
+    const channel = (body as any).channel?.id;
+    const messageTs = (body as any).message?.ts;
+
+    log(`Approve clicked for post #${postId}`);
+
+    try {
+      const post = await getPostById(postId);
+      if (!post) {
+        await client.chat.postMessage({ channel, thread_ts: messageTs, text: `Post #${postId} not found.` });
+        return;
+      }
+      if (post.status !== "draft") {
+        await client.chat.postMessage({ channel, thread_ts: messageTs, text: `Post #${postId} is already ${post.status}.` });
+        return;
+      }
+
+      // Publish to LinkedIn
+      let linkedinPostId: string;
+
+      if (post.post_type === "carousel") {
+        const pdfData = await getPostPdf(postId);
+        if (pdfData) {
+          linkedinPostId = await createDocumentPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content,
+            pdfData
+          );
+        } else {
+          linkedinPostId = await createTextPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content
+          );
+        }
+      } else {
+        const imageRecord = await getPostImage(postId);
+        if (imageRecord && imageRecord.data) {
+          linkedinPostId = await createImagePost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content,
+            imageRecord.data
+          );
+        } else {
+          linkedinPostId = await createTextPost(
+            config.linkedin.accessToken,
+            config.linkedin.personUrn,
+            post.content
+          );
         }
       }
 
-      // Parse the payload
-      const params = new URLSearchParams(rawBody);
-      const payload = JSON.parse(params.get("payload") || "{}");
+      await markPostPublished(postId, linkedinPostId);
 
-      if (payload.type !== "block_actions") {
-        res.status(200).send();
-        return;
-      }
-
-      const action = payload.actions?.[0];
-      if (!action) {
-        res.status(200).send();
-        return;
-      }
-
-      const postId = parseInt(action.value, 10);
-      const actionId = action.action_id;
-
-      // Acknowledge immediately (Slack requires response within 3 seconds)
-      res.status(200).json({
-        text: actionId === "approve_post"
-          ? `Publishing post #${postId}...`
-          : `Rejecting post #${postId}...`,
+      // Update the original message
+      await client.chat.update({
+        channel,
+        ts: messageTs,
+        text: `Post #${postId} published`,
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Post #${postId} published to LinkedIn*\n\`${linkedinPostId}\``,
+            },
+          },
+          {
+            type: "context",
+            elements: [
+              { type: "mrkdwn", text: `Published at ${new Date().toLocaleString("en-US", { timeZone: config.bot.timezone })}` },
+            ],
+          },
+        ],
       });
 
-      // Process the action async
-      try {
-        if (actionId === "approve_post") {
-          const result = await handleApprove(postId, payload.channel?.id, payload.message?.ts);
-          log(result);
-        } else if (actionId === "reject_post") {
-          const result = await handleReject(postId);
-          log(result);
-        }
-      } catch (err: any) {
-        log(`Action failed: ${err.message}`);
-        // Try to notify in Slack
-        const ref = await getSlackMessageRef(postId);
-        if (ref) {
-          await postThreadReply(ref.channel, ref.ts, `Action failed: ${err.message}`);
-        }
-      }
+      log(`Post #${postId} published to LinkedIn: ${linkedinPostId}`);
     } catch (err: any) {
-      log(`Interaction handler error: ${err.message}`);
-      if (!res.headersSent) res.status(500).send("Internal error");
+      log(`Approve failed for #${postId}: ${err.message}`);
+      await client.chat.postMessage({
+        channel,
+        thread_ts: messageTs,
+        text: `Failed to publish post #${postId}: ${err.message}`,
+      });
     }
   });
 
-  const port = config.dashboard.port || 3000;
-  app.listen(port, () => {
-    log(`Slack interaction server running on port ${port}`);
+  // Handle Reject button
+  app.action("reject_post", async ({ ack, action, client, body }) => {
+    await ack();
+
+    const postId = parseInt((action as any).value, 10);
+    const channel = (body as any).channel?.id;
+    const messageTs = (body as any).message?.ts;
+
+    log(`Reject clicked for post #${postId}`);
+
+    try {
+      const post = await getPostById(postId);
+      if (!post) {
+        await client.chat.postMessage({ channel, thread_ts: messageTs, text: `Post #${postId} not found.` });
+        return;
+      }
+      if (post.status !== "draft") {
+        await client.chat.postMessage({ channel, thread_ts: messageTs, text: `Post #${postId} is already ${post.status}.` });
+        return;
+      }
+
+      await rejectPost(postId);
+
+      // Update the original message
+      await client.chat.update({
+        channel,
+        ts: messageTs,
+        text: `Post #${postId} rejected`,
+        blocks: [
+          {
+            type: "section",
+            text: {
+              type: "mrkdwn",
+              text: `*Post #${postId} rejected*`,
+            },
+          },
+          {
+            type: "context",
+            elements: [
+              { type: "mrkdwn", text: `Rejected at ${new Date().toLocaleString("en-US", { timeZone: config.bot.timezone })}` },
+            ],
+          },
+        ],
+      });
+
+      // Ask for feedback in thread
+      await client.chat.postMessage({
+        channel,
+        thread_ts: messageTs,
+        text: "What didn't you like about this one? Reply here so the bot can learn.",
+      });
+
+      log(`Post #${postId} rejected.`);
+    } catch (err: any) {
+      log(`Reject failed for #${postId}: ${err.message}`);
+      await client.chat.postMessage({
+        channel,
+        thread_ts: messageTs,
+        text: `Failed to reject post #${postId}: ${err.message}`,
+      });
+    }
   });
+
+  await app.start();
+  log("Slack Bot connected via Socket Mode");
 }
 
-// Direct entry point
-startInteractionServer().catch((err) => {
-  console.error("Failed to start interaction server:", err);
+startSlackApp().catch((err) => {
+  console.error("Failed to start Slack app:", err);
   process.exit(1);
 });

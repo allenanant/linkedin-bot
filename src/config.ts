@@ -56,6 +56,7 @@ export const config = {
   slack: {
     webhookUrl: process.env.SLACK_WEBHOOK_URL || "",
     botToken: process.env.SLACK_BOT_TOKEN || "",
+    appToken: process.env.SLACK_APP_TOKEN || "",
     signingSecret: process.env.SLACK_SIGNING_SECRET || "",
     channelId: process.env.SLACK_CHANNEL_ID || "",
     dashboardUrl: process.env.DASHBOARD_URL || "",
