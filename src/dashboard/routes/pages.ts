@@ -19,13 +19,24 @@ function paramStr(val: string | string[] | undefined): string {
   return val || "";
 }
 
+// Simple in-memory cache (60s TTL) to avoid hammering Neon on every page load
+const cache = new Map<string, { data: any; expires: number }>();
+function cached<T>(key: string, ttlMs: number, fn: () => Promise<T>): Promise<T> {
+  const entry = cache.get(key);
+  if (entry && Date.now() < entry.expires) return Promise.resolve(entry.data);
+  return fn().then((data) => {
+    cache.set(key, { data, expires: Date.now() + ttlMs });
+    return data;
+  });
+}
+
 // GET / - Overview page
 router.get("/", async (_req: Request, res: Response) => {
   try {
     const [overview, tip, draftCount] = await Promise.all([
-      getPostCounts(),
-      getLatestTip(),
-      getDraftCount(),
+      cached("postCounts", 60_000, getPostCounts),
+      cached("latestTip", 300_000, getLatestTip),
+      cached("draftCount", 30_000, getDraftCount),
     ]);
     const html = homePage(overview, tip, { draftCount });
     res.send(html);
@@ -41,9 +52,10 @@ router.get("/posts", async (req: Request, res: Response) => {
     const page = parseInt(req.query.page as string) || 1;
     const limit = 20;
     const status = req.query.status as string | undefined;
+    const cacheKey = `posts_${page}_${limit}_${status || "all"}`;
     const [{ posts, total }, draftCount] = await Promise.all([
-      getAllPosts(page, limit, status),
-      getDraftCount(),
+      cached(cacheKey, 30_000, () => getAllPosts(page, limit, status)),
+      cached("draftCount", 30_000, getDraftCount),
     ]);
     const html = postsPage(posts, page, total, limit, status, { draftCount });
     res.send(html);
@@ -63,7 +75,7 @@ router.get("/posts/:id", async (req: Request, res: Response) => {
     }
     const [post, draftCount] = await Promise.all([
       getPostById(id),
-      getDraftCount(),
+      cached("draftCount", 30_000, getDraftCount),
     ]);
     if (!post) {
       res.status(404).send("Post not found");
@@ -77,10 +89,12 @@ router.get("/posts/:id", async (req: Request, res: Response) => {
   }
 });
 
-// GET /drafts - Draft approval page
+// GET /drafts - Draft approval page (no cache - always fresh for approvals)
 router.get("/drafts", async (_req: Request, res: Response) => {
   try {
     const drafts = await getDraftPosts();
+    // Invalidate draft count cache when viewing drafts
+    cache.delete("draftCount");
     const html = draftsPage(drafts, { draftCount: drafts.length });
     res.send(html);
   } catch (err) {

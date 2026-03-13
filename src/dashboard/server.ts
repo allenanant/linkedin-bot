@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import path from "path";
 import { config } from "../config";
 import { initDb } from "../storage/db";
@@ -12,6 +13,7 @@ async function startServer(): Promise<void> {
   const app = express();
 
   // Middleware
+  app.use(compression());
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 

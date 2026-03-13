@@ -10,7 +10,7 @@ export async function initDb(): Promise<void> {
     connectionString: config.database.url,
     ssl: { rejectUnauthorized: false },
     max: 5,
-    idleTimeoutMillis: 30000,
+    idleTimeoutMillis: 120000,
     connectionTimeoutMillis: 10000,
   });
 
@@ -19,6 +19,11 @@ export async function initDb(): Promise<void> {
   pool.on("error", (err) => {
     console.error("[DB] Idle client error (will reconnect):", err.message);
   });
+
+  // Keep Neon awake: ping every 2 minutes so it doesn't auto-suspend
+  setInterval(() => {
+    pool.query("SELECT 1").catch(() => {});
+  }, 120_000);
 
   await pool.query(`
     CREATE TABLE IF NOT EXISTS posts (
@@ -134,7 +139,7 @@ export async function saveResearchCache(type: string, data: any) {
 
 export async function getAllPosts(page = 1, limit = 20, status?: string): Promise<{ posts: any[]; total: number }> {
   const offset = (page - 1) * limit;
-  let query = `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, post_type, research_data, created_at, posted_at, (image_data IS NOT NULL) as has_image, (pdf_data IS NOT NULL) as has_pdf FROM posts`;
+  let query = `SELECT id, content, image_path, image_prompt, linkedin_post_id, status, post_type, created_at, posted_at, (image_data IS NOT NULL) as has_image, (pdf_data IS NOT NULL) as has_pdf FROM posts`;
   let countQuery = `SELECT COUNT(*) as count FROM posts`;
   const params: any[] = [];
   const countParams: any[] = [];
