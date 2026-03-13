@@ -62,6 +62,8 @@ export async function initDb(): Promise<void> {
     DO $$ BEGIN
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS pdf_data BYTEA;
       ALTER TABLE posts ADD COLUMN IF NOT EXISTS post_type TEXT NOT NULL DEFAULT 'text';
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS slack_channel TEXT;
+      ALTER TABLE posts ADD COLUMN IF NOT EXISTS slack_message_ts TEXT;
     EXCEPTION WHEN OTHERS THEN NULL;
     END $$;
   `);
@@ -212,6 +214,25 @@ export async function updatePostContent(id: number, content: string) {
 
 export async function rejectPost(id: number) {
   await pool.query(`UPDATE posts SET status = 'rejected' WHERE id = $1 AND status = 'draft'`, [id]);
+}
+
+// ─── Slack message tracking ───
+
+export async function saveSlackMessageRef(postId: number, channel: string, messageTs: string) {
+  await pool.query(
+    `UPDATE posts SET slack_channel = $1, slack_message_ts = $2 WHERE id = $3`,
+    [channel, messageTs, postId]
+  );
+}
+
+export async function getSlackMessageRef(postId: number): Promise<{ channel: string; ts: string } | null> {
+  const result = await pool.query(
+    `SELECT slack_channel, slack_message_ts FROM posts WHERE id = $1`,
+    [postId]
+  );
+  const row = result.rows[0];
+  if (!row?.slack_channel || !row?.slack_message_ts) return null;
+  return { channel: row.slack_channel, ts: row.slack_message_ts };
 }
 
 // ─── Post counts for overview ───

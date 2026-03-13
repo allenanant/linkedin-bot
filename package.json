@@ -24,6 +24,7 @@
     "@google/generative-ai": "^0.24.1",
     "@react-pdf/renderer": "^4.3.2",
     "@resvg/resvg-js": "^2.6.2",
+    "@slack/web-api": "^7.15.0",
     "axios": "^1.13.6",
     "better-sqlite3": "^12.6.2",
     "compression": "^1.8.1",
