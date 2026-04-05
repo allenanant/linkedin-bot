@@ -13,7 +13,7 @@
     "analytics": "npx tsx src/index.ts analytics",
     "start": "npx tsx src/index.ts schedule",
     "dashboard": "npx tsx src/dashboard/server.ts",
-    "build": "tsc && rm -rf dist/dashboard/public && cp -r src/dashboard/public dist/dashboard/public"
+    "build": "tsc && rm -rf dist/dashboard/public && cp -r src/dashboard/public dist/dashboard/public && mkdir -p dist/content/image-generator && cp -r src/content/image-generator/logos dist/content/image-generator/"
   },
   "keywords": [],
   "author": "",
@@ -24,6 +24,7 @@
     "@google/generative-ai": "^0.24.1",
     "@react-pdf/renderer": "^4.3.2",
     "@resvg/resvg-js": "^2.6.2",
+    "@slack/bolt": "^4.6.0",
     "@slack/web-api": "^7.15.0",
     "axios": "^1.13.6",
     "better-sqlite3": "^12.6.2",

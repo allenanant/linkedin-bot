@@ -7,6 +7,8 @@ export async function sendDraftToSlack(post: {
   content: string;
   topic: string;
   pdfData?: Buffer | null;
+  imageData?: Buffer | null;
+  imageMime?: string;
   postType: string;
   batchIndex?: number;
   batchTotal?: number;
@@ -39,7 +41,7 @@ export async function sendDraftToSlack(post: {
       elements: [
         {
           type: "mrkdwn",
-          text: `*Topic:* ${post.topic.slice(0, 200)} | *Type:* ${post.postType === "carousel" ? "PDF Carousel" : "Text"}`,
+          text: `*Topic:* ${post.topic.slice(0, 200)} | *Type:* ${post.postType === "carousel" ? "PDF Carousel" : post.postType === "image" ? "Tool Combo Image" : "Text"}`,
         },
       ],
     },
@@ -93,8 +95,15 @@ export async function sendDraftToSlack(post: {
     // Save the Slack message reference so we can update it later
     await saveSlackMessageRef(post.id, result.channel, result.ts);
 
-    // Upload PDF in thread if available
-    if (post.pdfData) {
+    // Upload image or PDF in thread if available
+    if (post.imageData) {
+      await uploadFileToThread(
+        result.channel,
+        result.ts,
+        post.imageData,
+        `draft-${post.id}-image.png`
+      );
+    } else if (post.pdfData) {
       await uploadFileToThread(
         result.channel,
         result.ts,

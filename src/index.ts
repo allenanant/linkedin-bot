@@ -1,6 +1,7 @@
 import { config } from "./config";
 import { generateLinkedInPost } from "./content/generator";
 import { generateCarousel } from "./content/carousel-generator";
+import { renderToolComboImage } from "./content/image-renderer";
 import { initDb, savePost } from "./storage/db";
 import { scheduleDailyJobs } from "./scheduler/cron";
 import { notifyPipelineError } from "./notifications/slack";
@@ -14,24 +15,38 @@ function log(msg: string) {
 async function generateOnePost(
   research: any,
   index: number,
-  total: number
+  total: number,
+  postFormat: "image" | "carousel"
 ): Promise<void> {
-  log(`--- Generating post ${index}/${total} ---`);
+  log(`--- Generating post ${index}/${total} (${postFormat}) ---`);
 
   // Generate content
-  const generated = await generateLinkedInPost(research, false);
+  const generated = await generateLinkedInPost(research, false, "freebie", postFormat);
   log(`Post ${index}: topic = ${generated.topic.slice(0, 80)}`);
 
-  // Generate PDF carousel
   let pdfBuffer: Buffer | null = null;
+  let imageBuffer: Buffer | null = null;
   let postType = "text";
 
-  try {
-    pdfBuffer = await generateCarousel(generated.content, generated.topic);
-    postType = "carousel";
-    log(`Post ${index}: carousel PDF generated (${pdfBuffer.length} bytes)`);
-  } catch (err: any) {
-    log(`Post ${index}: carousel failed (${err.message}). Saving as text-only.`);
+  if (postFormat === "image") {
+    // Render glassmorphism tool-combo PNG
+    try {
+      const logos = generated.toolLogos || { tool1: "claude", tool2: "meta", floatingLogos: ["slack", "notion", "zapier", "hubspot"] };
+      imageBuffer = await renderToolComboImage(logos.tool1, logos.tool2, logos.floatingLogos);
+      postType = "image";
+      log(`Post ${index}: tool-combo image generated (${imageBuffer.length} bytes)`);
+    } catch (err: any) {
+      log(`Post ${index}: image generation failed (${err.message}). Saving as text-only.`);
+    }
+  } else {
+    // Generate PDF carousel (existing behavior)
+    try {
+      pdfBuffer = await generateCarousel(generated.content, generated.topic);
+      postType = "carousel";
+      log(`Post ${index}: carousel PDF generated (${pdfBuffer.length} bytes)`);
+    } catch (err: any) {
+      log(`Post ${index}: carousel failed (${err.message}). Saving as text-only.`);
+    }
   }
 
   // Save to DB
@@ -40,6 +55,8 @@ async function generateOnePost(
     researchData: JSON.stringify(research),
     status: "draft",
     pdfData: pdfBuffer || undefined,
+    imageData: imageBuffer || undefined,
+    imageMime: imageBuffer ? "image/png" : undefined,
     postType,
   });
   log(`Post ${index}: saved as draft #${postId}`);
@@ -50,6 +67,8 @@ async function generateOnePost(
     content: generated.content,
     topic: generated.topic,
     pdfData: pdfBuffer,
+    imageData: imageBuffer,
+    imageMime: imageBuffer ? "image/png" : undefined,
     postType,
     batchIndex: index,
     batchTotal: total,
@@ -70,9 +89,11 @@ async function runDailyBatch() {
     log("Research complete.");
 
     // Step 2: Generate posts one by one
+    // Posts 1-3: glassmorphism tool-combo image, Posts 4-5: PDF carousel
     for (let i = 1; i <= postsPerBatch; i++) {
       try {
-        await generateOnePost(research, i, postsPerBatch);
+        const format = i <= 3 ? "image" : "carousel";
+        await generateOnePost(research, i, postsPerBatch, format);
       } catch (err: any) {
         log(`Post ${i}/${postsPerBatch} failed: ${err.message}`);
         // Continue to next post

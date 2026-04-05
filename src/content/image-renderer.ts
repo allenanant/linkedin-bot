@@ -4,12 +4,16 @@ import fs from "fs";
 import path from "path";
 
 export interface ImageData {
-  type: "freebie" | "news";
+  type: "freebie" | "news" | "tool-combo";
   headline: string;
   subtitle: string;
   points?: string[];
   category?: string;
   template?: string; // auto-assigned if not set
+  // Fields for tool-combo type
+  tool1?: string;
+  tool2?: string;
+  floatingLogos?: string[];
 }
 
 // ── Font loading ────────────────────────────────────────────────────
@@ -430,6 +434,301 @@ function buildEditorialCard(d: ImageData): any {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
+// SVG Logo Loading Helper
+// ═══════════════════════════════════════════════════════════════════════
+const LOGOS_DIR = path.resolve(__dirname, "image-generator/logos");
+
+function loadLogoAsDataUri(name: string): string | null {
+  try {
+    const filePath = path.join(LOGOS_DIR, `${name}.svg`);
+    const svgContent = fs.readFileSync(filePath, "utf-8");
+    const base64 = Buffer.from(svgContent).toString("base64");
+    return `data:image/svg+xml;base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
+function buildFallbackLogo(name: string): any {
+  const letter = (name || "?").charAt(0).toUpperCase();
+  return {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        width: 90,
+        height: 90,
+        borderRadius: 45,
+        backgroundColor: "rgba(0,0,0,0.08)",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: 36,
+        fontWeight: 700,
+        fontFamily: "Inter",
+        color: "#888888",
+      },
+      children: letter,
+    },
+  };
+}
+
+function buildLogoElement(name: string, size: number): any {
+  const dataUri = loadLogoAsDataUri(name);
+  if (dataUri) {
+    return { type: "img", props: { src: dataUri, width: size, height: size } };
+  }
+  return buildFallbackLogo(name);
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TEMPLATE 8: Glassmorphism Tool Combo
+// Two glass cards with SVG logos, "+" between them, floating icons
+// ═══════════════════════════════════════════════════════════════════════
+function buildGlassmorphism(d: ImageData): any {
+  const tool1 = d.tool1 || "claude";
+  const tool2 = d.tool2 || "notion";
+  const floating = d.floatingLogos || ["slack", "github", "zapier", "google-drive", "hubspot", "linkedin"];
+
+  // Floating icon positions (x, y from top-left as percentages, converted to px)
+  const floatingPositions = [
+    { left: 60, top: 40 },
+    { left: 1080, top: 60 },
+    { left: 40, top: 460 },
+    { left: 1100, top: 440 },
+    { left: 160, top: 520 },
+    { left: 980, top: 520 },
+  ];
+
+  const floatingIcons = floating.slice(0, 6).map((logo, i) => {
+    const pos = floatingPositions[i];
+    const size = 40 + (i % 2) * 8; // alternate 40px and 48px
+    const logoInner = buildLogoElement(logo, size - 16);
+    return {
+      type: "div",
+      props: {
+        style: {
+          display: "flex",
+          position: "absolute",
+          left: pos.left,
+          top: pos.top,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: "rgba(255,255,255,0.45)",
+          border: "1px solid rgba(255,255,255,0.6)",
+          alignItems: "center",
+          justifyContent: "center",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+        },
+        children: logoInner,
+      },
+    };
+  });
+
+  const glassCard = (toolName: string) => {
+    const logoContent = buildLogoElement(toolName, 90);
+    return {
+      type: "div",
+      props: {
+        style: {
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 16,
+        },
+        children: [
+          // Glow behind card
+          {
+            type: "div",
+            props: {
+              style: {
+                display: "flex",
+                position: "relative",
+              },
+              children: [
+                // Colored glow
+                {
+                  type: "div",
+                  props: {
+                    style: {
+                      display: "flex",
+                      position: "absolute",
+                      left: -10,
+                      top: -10,
+                      width: 220,
+                      height: 220,
+                      borderRadius: 38,
+                      backgroundColor: toolName === (d.tool1 || "claude") ? "rgba(6,147,227,0.12)" : "rgba(155,81,224,0.12)",
+                      filter: "blur(20px)",
+                    },
+                  },
+                },
+                // Glass card
+                {
+                  type: "div",
+                  props: {
+                    style: {
+                      display: "flex",
+                      width: 200,
+                      height: 200,
+                      backgroundColor: "rgba(255,255,255,0.7)",
+                      border: "1.5px solid rgba(255,255,255,0.9)",
+                      borderRadius: 28,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
+                    },
+                    children: logoContent,
+                  },
+                },
+              ],
+            },
+          },
+          // Label
+          {
+            type: "div",
+            props: {
+              style: {
+                display: "flex",
+                fontSize: 18,
+                fontWeight: 600,
+                fontFamily: "Inter",
+                color: "#333333",
+                textTransform: "capitalize",
+              },
+              children: toolName.replace(/-/g, " "),
+            },
+          },
+        ],
+      },
+    };
+  };
+
+  return {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        width: W,
+        height: H,
+        backgroundImage: "radial-gradient(ellipse at 50% 40%, #f0f0f5, #e8e8ed, #dddde4)",
+        fontFamily: "Inter",
+        justifyContent: "center",
+        alignItems: "center",
+        position: "relative",
+        overflow: "hidden",
+      },
+      children: [
+        // Floating icons
+        ...floatingIcons,
+        // Category label
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#999999",
+              letterSpacing: 3,
+              marginBottom: 32,
+            },
+            children: (d.category || "TOOL COMBO").toUpperCase(),
+          },
+        },
+        // Cards row
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: 32,
+            },
+            children: [
+              glassCard(tool1),
+              // Plus symbol
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    fontSize: 48,
+                    fontWeight: 300,
+                    color: "#aaaaaa",
+                    marginBottom: 32,
+                  },
+                  children: "+",
+                },
+              },
+              glassCard(tool2),
+            ],
+          },
+        },
+        // Headline (if provided)
+        ...(d.headline
+          ? [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    fontSize: 24,
+                    fontWeight: 700,
+                    fontFamily: "Poppins",
+                    color: "#222222",
+                    textAlign: "center",
+                    marginTop: 28,
+                    maxWidth: 700,
+                  },
+                  children: d.headline,
+                },
+              },
+            ]
+          : []),
+        // Subtitle (if provided)
+        ...(d.subtitle
+          ? [
+              {
+                type: "div",
+                props: {
+                  style: {
+                    display: "flex",
+                    fontSize: 14,
+                    color: "#777777",
+                    fontWeight: 400,
+                    textAlign: "center",
+                    marginTop: 8,
+                    maxWidth: 600,
+                  },
+                  children: d.subtitle,
+                },
+              },
+            ]
+          : []),
+        // Footer
+        {
+          type: "div",
+          props: {
+            style: {
+              display: "flex",
+              position: "absolute",
+              bottom: 20,
+              fontSize: 11,
+              color: "#bbbbbb",
+              letterSpacing: 1,
+            },
+            children: "thegrowthengine.net",
+          },
+        },
+      ],
+    },
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════════════
 // TEMPLATE SELECTION — random rotation
 // ═══════════════════════════════════════════════════════════════════════
 const FREEBIE_TEMPLATES = [
@@ -439,15 +738,18 @@ const FREEBIE_TEMPLATES = [
   "stats-card",
   "comparison-split",
   "minimal-statement",
+  "glassmorphism",
 ];
 
 const NEWS_TEMPLATES = [
   "editorial-card",
   "bold-typography",
   "minimal-statement",
+  "glassmorphism",
 ];
 
-function pickRandomTemplate(postType: "freebie" | "news"): string {
+function pickRandomTemplate(postType: "freebie" | "news" | "tool-combo"): string {
+  if (postType === "tool-combo") return "glassmorphism";
   const pool = postType === "news" ? NEWS_TEMPLATES : FREEBIE_TEMPLATES;
   return pool[Math.floor(Math.random() * pool.length)];
 }
@@ -460,6 +762,7 @@ function buildTemplate(d: ImageData, template: string): any {
     case "comparison-split":  return buildComparisonSplit(d);
     case "minimal-statement": return buildMinimalStatement(d);
     case "editorial-card":    return buildEditorialCard(d);
+    case "glassmorphism":     return buildGlassmorphism(d);
     case "notion-mockup":
     default:                  return buildNotionMockup(d);
   }
@@ -484,4 +787,18 @@ export async function renderPostImage(imageData: ImageData): Promise<Buffer> {
 
   const pngData = resvg.render();
   return Buffer.from(pngData.asPng());
+}
+
+// ── Tool-combo shortcut ────────────────────────────────────────────
+export async function renderToolComboImage(tool1: string, tool2: string, floatingLogos: string[]): Promise<Buffer> {
+  const imageData: ImageData = {
+    type: "tool-combo",
+    headline: "",
+    subtitle: "",
+    tool1,
+    tool2,
+    floatingLogos,
+    template: "glassmorphism",
+  };
+  return renderPostImage(imageData);
 }
