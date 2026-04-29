@@ -21,7 +21,14 @@ export interface GeneratedPost {
   imageData: ImageData | null;
   topic: string;
   toolLogos?: { tool1: string; tool2: string; floatingLogos: string[] };
+  voiceMode: VoiceMode;
+  ctaKeyword: string;
+  leadMagnetTitle: string;
 }
+
+// Voice mode router. Tactical = sentence-case Nick-style for breakdowns/giveaways.
+// Story = casual "Well lol to be very honest" for opinion/observation posts.
+export type VoiceMode = "tactical" | "story";
 
 // ─── Step 1a: Pick a NEWS topic ───
 
@@ -267,15 +274,82 @@ Think like someone who genuinely wants to help their audience succeed.`;
 
 // ─── Step 4: Generate 3 post variations ───
 
-async function generateVariations(topic: string, valueIdeas: string): Promise<string> {
+async function generateVariations(topic: string, valueIdeas: string, voiceMode: VoiceMode): Promise<string> {
   const prompt = `Write 3 LinkedIn post variations for Allen Anant Thomas about: "${topic}"
 
 Value ideas to use:
 ${valueIdeas}
 
-═══ ALLEN'S VOICE — MOST IMPORTANT SECTION. READ CAREFULLY. ═══
+═══ HARD GUARDRAILS — VIOLATION = REWRITE ═══
 
-Here is a REAL post Allen wrote. Your output MUST match this voice EXACTLY:
+The post is for Allen's PUBLIC LinkedIn audience. NEVER mention any of the following:
+- Specific clients (Hoogah, Dr SW, Restart Medical, SideXSide, Frenchify, KP Singh, Kaylyn, etc.) or anonymized references that could only be one of his clients.
+- Internal bots / automations he has built (Meta Ads Reporter, Upwork Lead Bot, LinkedIn bot, Twitter bot, SXS bot, dashboards, content pipelines he wrote himself, etc.)
+- Backend systems, internal tooling, or "stuff Allen built for himself"
+- Personal anecdotes pulled from someone else's viral post (e.g. don't claim "I uploaded my genes to Claude Code" — that's Nick's story)
+
+The post should be about PUBLIC AI marketing tools, public news, public tactics that any marketer can apply. Allen is the messenger of public knowledge, not a tour guide for his private stack.
+
+═══ FICTIONALIZED ANECDOTES — RULES ═══
+
+Allen is fine with the bot inventing operational anecdotes ("I ran 3 campaigns last week", "I gave Gemini one prompt Tuesday morning") because that mirrors the real work his agency does daily. Use these freely to make posts feel grounded.
+
+But NEVER fictionalize big trust-breaking numbers. Specifically banned:
+- Revenue claims: "we 10x'd revenue", "$500K MRR", "$2M pipeline", "scaled to $4M ARR", "made $1.2M last quarter"
+- Growth multiples ≥3x as a personal/agency claim ("tripled conversions", "5x'd our ROAS")
+- Specific TGE company financials of any kind
+- Specific client revenue or results
+- Fake testimonials or fake quotes from real people
+
+Allowed numbers: small operational stats. Campaign counts (1-10), budgets under $1K, time saved (hours), CPA / CTR / engagement deltas under 50% if plausible, time-windows (days, hours, weeks).
+
+Rule of thumb: a curious skeptic should be able to look at the number in the post and think "yeah, that's what running a normal small test looks like." Anything that would invite "prove it" goes out.
+
+═══ VOICE MODE: ${voiceMode.toUpperCase()} ═══
+
+${voiceMode === "tactical" ? `
+You are writing in TACTICAL mode — Allen's highest-performing voice. This is the voice of his 561-reaction / 2,465-comment Claude Code post.
+
+Reference post (Allen's actual top performer, written by him):
+
+"""
+We run our entire GTM through Claude Code.
+
+Here's the 21 files that power it.
+
+Most people open Claude Code and use it like ChatGPT because they don't know what else to do with it.
+
+I've been writing code my whole career so the engineering side was easy. Figuring out how to make it actually useful for sales and marketing took months of experimenting.
+
+Turns out one file changes everything. CLAUDE.md.
+
+Without it Claude is a chatbot that gives you generic output. With it Claude actually knows your business, your ICP, your stack, your playbook, and every campaign you've ever run. It's not even the same tool anymore.
+
+5 templates by GTM motion. Outbound, PLG, ABM, founder-led, agency. Pick whichever one matches how you sell.
+
+7 plug-in modules. ICP definition, buying signals, copy frameworks, data hygiene, campaign logs, objection handling, reporting. Drop in the ones you need.
+
+6 skill files. Enrichment, personalization, signal monitoring, campaign creation, reply triage, pipeline review.
+
+2 filled-in examples you can clone today. One for B2B SaaS, one for agencies. Copy it, fill in your company info, run it.
+
+Comment "PLAYBOOK" and I'll DM you the repo.
+"""
+
+VOICE RULES for tactical mode:
+- Sentence case proper (capital first letter, normal punctuation). NO lowercase casual.
+- Short punchy sentences. One thought per line. Heavy line breaks.
+- Specific numbers everywhere (21 files, 5 templates, 7 modules). No vague "many" or "a lot."
+- Concrete tool/platform names where relevant (Apollo, HubSpot, Claude, Meta Ads Manager, etc.).
+- Numbered or bulleted breakdown of the value in the middle.
+- End with: "Comment [KEYWORD] and I'll DM you the [asset name]."
+- NO em-dashes. NO "Well," / "You know what?" / "lol" / "this kind of shit" / "to be very honest."
+- NO LinkedIn copywriter tropes ("here's the thing", "let that sink in", "buckle up").
+- NO power sentences ("Start small. Prove the ROI. Then scale.").
+` : `
+You are writing in STORY mode — Allen's casual stream-of-consciousness voice. Use this for personal observation / discovery / opinion posts.
+
+Reference post (Allen's actual casual voice):
 
 """
 You know what most founders think automation is?
@@ -290,41 +364,28 @@ Here's how I think about it.
 2. Highlight the ones that are repetitive and rule-based.
 3. Those are your automation targets. Work on it.
 
-Well, I was not aware of all this, but I came to know that I can do this kind of shit and build such badass things once I have my Claude assistant on Claude Code that handles daily client reports, lead enrichment, content scheduling, Slack notifications, and you name it.
-
-You know what? How I start my day.
-I start my day with a command line. /morning-brief
-It took me five hours to build these automations. With plain text.
-And it saves me three to four plus hours every single day.
-
-The trick is very simple, but people complicate it.
-You simply have to tell your assistant things that you know about your business already, and to be very honest, it's way smarter than you are, so it would already predict what you are doing and at what stage you are currently, even if you don't tell it all the things.
-
+Well, I was playing around with this AI tool the other day.
+And to be very honest, it's way smarter than you are.
 The thing that's really amusing is how smart it gets with time.
-When the context builds up, when the memory builds up, when the CLAUDE.md file builds up, that's when you see the real magic.
 
 Well, why do I just keep it to myself?
 I thought I could share this small value with you all as well.
 
-I created this five-page document that shows you how you can build your own Claude assistant for your business that would run entirely automated.
-
 1. Connect with me.
-2. Comment "Claude" so that I can send it in your inbox straight away.
+2. Comment "AUTOMATE" so that I can send it in your inbox straight away.
 """
 
-VOICE RULES extracted from that post:
-- Uses "Well," and "You know what?" as transitions constantly
-- Says "lol", "this kind of shit", "badass things" naturally
-- Humble: "I was not aware of all this" NOT "Here's what I discovered"
-- Compliments the tool: "it's way smarter than you are"
-- Personal details: specific command names, exact hours saved
-- Reads like someone TALKING, not someone WRITING
-- NO power sentences like "Start small. Prove the ROI. Then scale."
-- NO polished copywriter voice. NO clean structured one-liners.
-- If your output sounds cleaner than the example above, you FAILED. Rewrite it.
+VOICE RULES for story mode:
+- Uses "Well," / "You know what?" / "to be very honest" as natural transitions.
+- Says "lol" once, naturally.
+- Humble: "I was not aware of all this", "I was playing around with this".
+- Reads like talking, not writing.
+- DO NOT mention specific clients, specific bots, or specific internal projects (see HARD GUARDRAILS above). Talk about generic AI tools / generic marketing situations only.
+- End with the same "1. Connect with me. 2. Comment [KEYWORD]" CTA.
+`}
 
 EVERY post MUST end with:
-- A free document/guide offer related to the topic
+- A free document/guide offer related to the topic. Use a concrete deliverable name like "the playbook", "the 5-step framework", "the prompt library".
 - "1. Connect with me."
 - "2. Comment [keyword] so that I can send it in your inbox straight away."
 
@@ -403,9 +464,56 @@ VARIATION 3:
 }
 
 // ─── Step 5: Humanize all variations ───
+// In TACTICAL mode this is a light cleanup pass (strip AI tropes, keep sentence case).
+// In STORY mode it's the heavy "Well lol to be very honest" Allen-ization.
 
-async function humanizeVariations(variations: string): Promise<string> {
-  const prompt = `REWRITE these 3 LinkedIn posts so they sound EXACTLY like Allen wrote them.
+async function humanizeVariations(variations: string, voiceMode: VoiceMode): Promise<string> {
+  if (voiceMode === "tactical") {
+    return humanizeTactical(variations);
+  }
+  return humanizeStory(variations);
+}
+
+async function humanizeTactical(variations: string): Promise<string> {
+  const prompt = `Polish these 3 LinkedIn posts. Keep them tight, punchy, and human. They are written in TACTICAL mode (Nick Saraev / Allen's Claude Code banger style).
+
+DRAFTS:
+
+${variations}
+
+═══ HARD GUARDRAILS ═══
+- NEVER reference specific clients, internal bots, dashboards, or "stuff Allen built privately." If a line implies private knowledge, rewrite it as a generic public observation.
+- Never include personal anecdotes that came from someone else's viral post.
+- Operational anecdotes ("I ran 3 campaigns") are FINE. Big revenue/MRR/ARR claims and growth multiples ≥3x are NOT — strip them. Allowed: campaign counts, budgets <$1K, hours, CPA/CTR deltas under 50% if plausible.
+
+═══ POLISH RULES — TACTICAL MODE ═══
+- Sentence case proper. Capitalize first letter of each sentence. NO lowercase casual.
+- Short punchy sentences. One thought per line. Heavy line breaks for scanability.
+- Specific numbers stay (21 files, 5 templates). Vague "many/lots/various" → rewrite with concrete number or delete.
+- Concrete tool/platform names where they fit (Claude, Meta Ads Manager, HubSpot, etc.).
+- KEEP the numbered/bulleted breakdown structure if the variation already has one.
+- Strip ALL AI-copywriter tropes: "here's the thing", "let that sink in", "buckle up", "navigate", "leverage", em-dashes (replace with periods), "in today's fast-paced world".
+- Strip ALL "Well, you know what, lol, to be very honest, this kind of shit, badass" — that's the OTHER voice mode, doesn't belong here.
+- Keep the "Comment [KEYWORD] and I'll DM you the [asset]" CTA at the bottom.
+- Length: 150-300 words. Tight.
+
+═══ FOUNDER TEST ═══
+Read each post out loud. Does it sound like a real founder sharing a tactical breakdown? Or like a bot trying too hard? If the latter, rewrite with simpler, more direct language.
+
+Return all 3 polished variations:
+VARIATION 1:
+[polished post]
+
+VARIATION 2:
+[polished post]
+
+VARIATION 3:
+[polished post]`;
+  return await callGemini(prompt);
+}
+
+async function humanizeStory(variations: string): Promise<string> {
+  const prompt = `REWRITE these 3 LinkedIn posts so they sound EXACTLY like Allen wrote them in STORY mode.
 
 Allen writes like he's recording a voice note for a friend. NOT like a copywriter. NOT like ChatGPT. NOT like a LinkedIn influencer.
 
@@ -413,48 +521,34 @@ DRAFTS TO REWRITE:
 
 ${variations}
 
-═══ REFERENCE — THIS IS HOW ALLEN ACTUALLY WRITES ═══
-"Well, I was not aware of all this, but I came to know that I can do this kind of shit and build such badass things"
-"You know what? How I start my day. I start my day with a command line."
+═══ HARD GUARDRAILS ═══
+- NEVER reference Allen's specific clients (Hoogah, Dr SW, Restart Medical, SideXSide, Frenchify, etc.) or internal bots/dashboards/automations he has built privately.
+- Never claim personal anecdotes pulled from someone else's viral post (Nick's gene story stays Nick's).
+- Talk about generic AI tools and generic marketing situations only.
+- Operational anecdotes ("I was playing around with this AI tool") are FINE. Big revenue/MRR/ARR claims and growth multiples ≥3x are NOT — strip them. Allowed: campaign counts, budgets <$1K, hours, CPA/CTR deltas under 50% if plausible.
+
+═══ REFERENCE — THIS IS HOW ALLEN ACTUALLY WRITES IN STORY MODE ═══
+"Well, I was playing around with this AI tool the other day"
+"You know what? How I start my day."
 "The trick is very simple, but people complicate it."
 "To be very honest, it's way smarter than you are"
 "Well, why do I just keep it to myself? I thought I could share this small value with you all as well."
 
-═══ RALPH COPYWRITING QUALITY FRAMEWORK ═══
-
-Before writing each variation, mentally run through this quality loop:
-1. UNIQUE ANGLE: What angle on this topic has nobody else taken? Don't write generic takes.
-2. SPECIFICITY: Include real tool names, real numbers, real examples. Vague = AI slop.
-3. FOUNDER TEST: "Would Allen actually publish this under his name?" If not, find a better angle.
-4. SCROLL-STOP: The hook must make someone stop mid-scroll. Test: would YOU stop for this?
-5. SELF-CRITIQUE: After writing, ask "could anyone have written this?" If yes, rewrite with more personality.
-
-Red flags that mean REWRITE:
-- Generic opening that could apply to any topic
-- No specific data, tools, or examples mentioned
-- Sounds like a LinkedIn thought leader template
-- Safe take that everyone agrees with (find the interesting angle)
-- Could have been generated by any AI without context about Allen
-
-═══ REWRITE RULES ═══
+═══ REWRITE RULES — STORY MODE ═══
 1. Add "Well," or "You know what?" or "To be very honest" transitions. At least 2-3 per post.
 2. Add "lol" once naturally. Add "this kind of shit" or "badass" if it fits.
 3. Replace any line that sounds written with how someone would SAY it out loud.
-4. Add personal discovery moments: "I came to know that...", "I was playing around with..."
+4. Add personal discovery moments: "I came to know that...", "I was playing around with..." — but keep them generic, not about Allen's specific projects.
 5. Make the hook conversational. "You know what most people get wrong about X?" not "X is broken. Here's why."
 6. The ending MUST be: free document offer + "1. Connect with me." + "2. Comment [keyword] so that I can send it in your inbox straight away."
 7. Every line max 15 words. Break longer lines.
 8. Replace em-dashes with periods.
 9. NO power sentences. NO clean one-liners. NO polished structure.
-10. If a line sounds like a copywriter wrote it, REWRITE it to sound messy and human.
 
 ═══ AI DETECTION ═══
 If ANY line sounds AI-generated OR like a LinkedIn copywriter, rewrite it. Red flags:
 - Clean power sentences: "The trick isn't X. It's Y." (BANNED)
 - Starting with "In today's..." or "As a..."
-- Lists where every item follows the exact same sentence structure
-- Overly balanced statements. Allen has strong preferences (pro-Claude, anti-OpenAI).
-- Perfect grammar everywhere. Allen uses fragments, "lol", casual phrasing.
 - Generic hooks like "Most people don't know..." or "Here's what nobody tells you..."
 
 Return all 3 humanized variations:
@@ -690,44 +784,109 @@ FLOATING: [comma-separated logo names]`;
   return { tool1, tool2, floatingLogos };
 }
 
+// ─── Voice mode classifier — picks tactical vs story based on topic ───
+
+async function classifyVoiceMode(topic: string): Promise<VoiceMode> {
+  const prompt = `Classify this LinkedIn post topic into one of two voice modes:
+
+TOPIC: "${topic}"
+
+VOICE MODES:
+- TACTICAL — sentence-case Nick Saraev / breakdown style. Use for: tool launches with clear use cases, playbook giveaways, framework breakdowns, "here's how to do X" tutorials, news + step-by-step action.
+- STORY — casual "Well, lol, to be very honest" voice. Use for: personal observations, opinion takes, "I noticed something weird" posts, philosophical reflections about marketing.
+
+Default to TACTICAL unless the topic is clearly a personal observation/opinion.
+
+Respond with only the word: TACTICAL or STORY`;
+  const result = await callGemini(prompt);
+  return result.trim().toUpperCase().startsWith("STORY") ? "story" : "tactical";
+}
+
+// ─── Extract CTA keyword + lead magnet title from final post ───
+
+async function extractCtaAndAsset(post: string, topic: string): Promise<{ ctaKeyword: string; leadMagnetTitle: string }> {
+  const prompt = `From this LinkedIn post, extract:
+1. The CTA keyword (the word people are told to comment to receive the freebie). One word, uppercase.
+2. The lead magnet title (the name of the freebie/playbook/framework being offered). 4-7 words.
+
+POST:
+${post}
+
+If the post offers no freebie, return:
+KEYWORD: NONE
+TITLE: NONE
+
+Otherwise return:
+KEYWORD: [single uppercase word]
+TITLE: [4-7 words describing the asset]`;
+  const result = await callGemini(prompt);
+  const kwMatch = result.match(/KEYWORD:\s*(\S+)/i);
+  const titleMatch = result.match(/TITLE:\s*(.+)/i);
+  const keyword = (kwMatch?.[1] || "NONE").trim().toUpperCase().replace(/[^A-Z0-9_]/g, "");
+  const title = (titleMatch?.[1] || "NONE").trim();
+  return {
+    ctaKeyword: keyword,
+    leadMagnetTitle: title === "NONE" ? "" : title,
+  };
+}
+
 // ─── Main: Multi-step content generation pipeline ───
 
 export async function generateLinkedInPost(
   research: ResearchData,
   shouldIncludeImage: boolean,
   postType: "news" | "freebie" = "freebie",
-  postFormat: "image" | "carousel" = "carousel"
+  postFormat: "image" | "carousel" | "video" = "carousel",
+  topicOverride?: string
 ): Promise<GeneratedPost> {
-  const recentPosts = await getRecentPosts(5);
-  const recentTopics = recentPosts.map((p: any) => p.content?.slice(0, 100)).join("\n");
+  // Avoid hitting the DB when a topic is supplied directly (test/sample flows).
+  let recentTopics = "";
+  if (!topicOverride) {
+    try {
+      const recentPosts = await getRecentPosts(5);
+      recentTopics = recentPosts.map((p: any) => p.content?.slice(0, 100)).join("\n");
+    } catch (e: any) {
+      console.warn(`  [generator] Could not load recent posts: ${e.message}. Continuing without dedupe context.`);
+    }
+  }
 
-  console.log(`  [1/7] Picking topic (${postType} mode)...`);
-  const topic = postType === "news"
+  console.log(`  [1/8] Picking topic (${postType} mode)...`);
+  const topic = topicOverride
+    ? topicOverride
+    : postType === "news"
     ? await pickNewsTopic(research, recentTopics)
     : await pickTopic(research, recentTopics);
   console.log(`  Topic: ${topic}`);
 
-  console.log("  [2/7] Researching similar posts...");
+  console.log("  [2/8] Classifying voice mode...");
+  const voiceMode = await classifyVoiceMode(topic);
+  console.log(`  Voice mode: ${voiceMode}`);
+
+  console.log("  [3/8] Researching similar posts...");
   const similarPosts = await researchSimilarPosts(topic);
 
-  console.log("  [3/7] Brainstorming value...");
+  console.log("  [4/8] Brainstorming value...");
   const valueIdeas = await brainstormValue(topic, similarPosts);
 
-  console.log("  [4/7] Generating 3 variations...");
-  const variations = await generateVariations(topic, valueIdeas);
+  console.log("  [5/8] Generating 3 variations...");
+  const variations = await generateVariations(topic, valueIdeas, voiceMode);
 
-  console.log("  [5/7] Humanizing content...");
-  const humanizedVariations = await humanizeVariations(variations);
+  console.log("  [6/8] Humanizing content...");
+  const humanizedVariations = await humanizeVariations(variations, voiceMode);
 
-  console.log("  [6/7] Selecting best version...");
+  console.log("  [7/8] Selecting best version...");
   const bestRaw = await pickBestVersion(humanizedVariations, topic);
   const bestMatch = bestRaw.match(/BEST_POST:\s*([\s\S]*?)$/);
   const bestPost = bestMatch?.[1]?.trim() || bestRaw.trim();
 
-  console.log("  [7/7] Quality review...");
+  console.log("  [8/8] Quality review...");
   const reviewedPost = await qualityReview(bestPost, topic);
 
   const finalPost = cleanForLinkedIn(reviewedPost);
+
+  console.log("  Extracting CTA keyword + lead magnet title...");
+  const { ctaKeyword, leadMagnetTitle } = await extractCtaAndAsset(finalPost, topic);
+  console.log(`  CTA: ${ctaKeyword || "NONE"} | Asset: ${leadMagnetTitle || "NONE"}`);
 
   let imageData: ImageData | null = null;
   if (shouldIncludeImage) {
@@ -748,6 +907,9 @@ export async function generateLinkedInPost(
     content: finalPost,
     imageData,
     toolLogos,
+    voiceMode,
+    ctaKeyword,
+    leadMagnetTitle,
   };
 }
 

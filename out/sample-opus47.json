@@ -1,0 +1,7 @@
+{
+  "topic": "Claude Opus 4.7 just shipped with a 1 million token context window and what marketers can actually d",
+  "voiceMode": "tactical",
+  "ctaKeyword": "CORPUS",
+  "leadMagnetTitle": "Brand Voice Extraction Prompt",
+  "content": "I pasted 9 months of content into one Claude prompt yesterday.\n\nEvery blog. Every email. Every LinkedIn post.\n\nClaude Opus 4.7 has a 1 million token window now, so it all fit.\n\nI asked it to extract our brand voice from what we actually publish.\nNot what our style guide says it should be.\n\nThree things came back that surprised me.\n\nFirst, two words we lean on way too much.\nBoth are filler. They're now on a do-not-use list.\n\nSecond, our LinkedIn sentences run about 40% shorter than our blog posts.\nWe never planned that. Now it's intentional.\n\nThird, the voice profile reads nothing like our brand book.\nThe brand book describes how we want to sound.\nOur corpus shows how we actually sound.\n\nVoice from the corpus beats voice from the style guide.\nYou can only do this when the model reads the whole library at once.\n\nIf you want to try it this week:\n\n1. Pull your last 6 to 12 months of content into one document.\n2. Paste it into Claude Opus 4.7.\n3. Ask for recurring phrases, rhythm patterns, and overused words.\n\nI saved the exact prompt I used. Happy to send it over if it's useful.\n\nComment \"CORPUS\" and I'll DM it to you."
+}

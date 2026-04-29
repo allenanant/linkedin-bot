@@ -255,6 +255,10 @@ async function createPostWithCarousel(style: "news" | "freebie", res: Response) 
       status: "draft",
       pdfData: pdfBuffer,
       postType: "carousel",
+      ctaKeyword: generated.ctaKeyword || undefined,
+      leadMagnetTitle: generated.leadMagnetTitle || undefined,
+      voiceMode: generated.voiceMode,
+      topic: generated.topic,
     });
 
     await notifyDraftReady({

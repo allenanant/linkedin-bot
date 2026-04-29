@@ -1,0 +1,7 @@
+{
+  "topic": "Gemini 3 Pro launched with a multi-step agent mode that can run a marketing experiment end to end",
+  "voiceMode": "tactical",
+  "ctaKeyword": "PROMPT",
+  "leadMagnetTitle": "Gemini Agent Marketing Prompt Pack",
+  "content": "I gave Gemini 3 Pro one prompt at 9am Tuesday.\n\nBy 3pm it had a winner.\n\nThe brief. Run a headline test on a B2B SaaS landing page. Goal. Lift demo bookings. Cap. $200.\n\nHere's what the agent did, in order.\n\n1. Pulled the live page and flagged the H1 as the test variable.\n2. Wrote 6 headline variants for different buyer intents.\n3. Spun up a Google Ads campaign with UTM tagging.\n4. Set a 95% significance threshold before launching.\n5. Ran traffic for 14 hours.\n6. Killed 2 underperformers early to protect spend.\n7. Delivered a 1-page memo with winner, lift, and reasoning.\n\nTotal human time. 11 minutes. 4 to write the brief. 7 to verify.\n\nThe honest part. The agent optimized for CTR because that's what it could measure in 14 hours.\n\nThe winning headline pulled higher clicks and lower demo conversion downstream.\n\nI would have caught it if the brief had named demo rate as the metric.\n\nFast agent. Sloppy brief. My fault, not the model's.\n\nI cleaned up the prompt and turned it into a template I now use every time.\n\nThe Gemini Agent Marketing Prompt Pack.\n\n1. Connect with me.\n2. Comment \"PROMPT\" and I'll send it over."
+}

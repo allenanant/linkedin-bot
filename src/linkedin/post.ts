@@ -143,6 +143,124 @@ export async function createImagePost(
   return postId;
 }
 
+export async function uploadVideo(
+  accessToken: string,
+  personUrn: string,
+  videoBuffer: Buffer
+): Promise<string> {
+  const initResponse = await axios.post(
+    `${LINKEDIN_API}/rest/videos?action=initializeUpload`,
+    {
+      initializeUploadRequest: {
+        owner: personUrn,
+        fileSizeBytes: videoBuffer.length,
+        uploadCaptions: false,
+        uploadThumbnail: false,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": "202602",
+      },
+    }
+  );
+
+  const value = initResponse.data.value;
+  const videoUrn: string = value.video;
+  const uploadToken: string = value.uploadToken ?? "";
+  const instructions: Array<{ uploadUrl: string; firstByte: number; lastByte: number }> =
+    value.uploadInstructions || [];
+
+  if (!instructions.length) {
+    throw new Error("LinkedIn videos initializeUpload returned no uploadInstructions");
+  }
+
+  const uploadedPartIds: string[] = [];
+  for (const instr of instructions) {
+    const chunk = videoBuffer.subarray(instr.firstByte, instr.lastByte + 1);
+    const partResp = await axios.put(instr.uploadUrl, chunk, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/octet-stream",
+      },
+      maxBodyLength: Infinity,
+    });
+    const etag = partResp.headers.etag || partResp.headers.ETag;
+    if (!etag) {
+      throw new Error("LinkedIn video chunk upload returned no ETag");
+    }
+    uploadedPartIds.push(String(etag).replace(/"/g, ""));
+  }
+
+  await axios.post(
+    `${LINKEDIN_API}/rest/videos?action=finalizeUpload`,
+    {
+      finalizeUploadRequest: {
+        video: videoUrn,
+        uploadToken,
+        uploadedPartIds,
+      },
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": "202602",
+      },
+    }
+  );
+
+  return videoUrn;
+}
+
+export async function createVideoPost(
+  accessToken: string,
+  personUrn: string,
+  text: string,
+  videoBuffer: Buffer,
+  title?: string
+): Promise<string> {
+  const videoUrn = await uploadVideo(accessToken, personUrn, videoBuffer);
+  const cleanText = sanitizeForLinkedIn(text);
+
+  const response = await axios.post(
+    `${LINKEDIN_API}/rest/posts`,
+    {
+      author: personUrn,
+      commentary: cleanText,
+      visibility: "PUBLIC",
+      distribution: {
+        feedDistribution: "MAIN_FEED",
+        targetEntities: [],
+        thirdPartyDistributionChannels: [],
+      },
+      content: {
+        media: {
+          title: title || "",
+          id: videoUrn,
+        },
+      },
+      lifecycleState: "PUBLISHED",
+      isReshareDisabledByAuthor: false,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+        "X-Restli-Protocol-Version": "2.0.0",
+        "LinkedIn-Version": "202602",
+      },
+    }
+  );
+
+  const postId = response.headers["x-restli-id"] || response.data?.id || "unknown";
+  return postId;
+}
+
 export async function uploadDocument(
   accessToken: string,
   personUrn: string,

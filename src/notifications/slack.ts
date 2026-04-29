@@ -113,6 +113,74 @@ export async function notifyPostPublished(postId: number, linkedinPostId: string
 }
 
 /**
+ * Send a Slack summary after a comment-watcher run.
+ * Stays quiet on no-op runs (no new comments, replies, or DMs).
+ */
+export async function notifyCommentWatcher(summary: {
+  postsScanned: number;
+  newCommentsSeen: number;
+  repliesPosted: number;
+  connectionsRequested: number;
+  connectionsAccepted: number;
+  dmsSent: number;
+  expired: number;
+  errors: string[];
+}): Promise<void> {
+  const webhookUrl = config.slack?.webhookUrl;
+  if (!webhookUrl) return;
+
+  const hasActivity =
+    summary.newCommentsSeen > 0 ||
+    summary.repliesPosted > 0 ||
+    summary.connectionsAccepted > 0 ||
+    summary.dmsSent > 0 ||
+    summary.expired > 0 ||
+    summary.errors.length > 0;
+  if (!hasActivity) return;
+
+  const fields: any[] = [
+    { type: "mrkdwn", text: `*Posts scanned:* ${summary.postsScanned}` },
+    { type: "mrkdwn", text: `*New comments:* ${summary.newCommentsSeen}` },
+    { type: "mrkdwn", text: `*Replies posted:* ${summary.repliesPosted}` },
+    { type: "mrkdwn", text: `*Connections requested:* ${summary.connectionsRequested}` },
+    { type: "mrkdwn", text: `*Connections accepted:* ${summary.connectionsAccepted}` },
+    { type: "mrkdwn", text: `*DMs sent:* ${summary.dmsSent}` },
+  ];
+  if (summary.expired > 0) {
+    fields.push({ type: "mrkdwn", text: `*Expired (5d):* ${summary.expired}` });
+  }
+
+  const payload: any = {
+    blocks: [
+      {
+        type: "header",
+        text: { type: "plain_text", text: "Comment Watcher Run", emoji: false },
+      },
+      { type: "section", fields },
+    ],
+  };
+
+  if (summary.errors.length > 0) {
+    payload.blocks.push({
+      type: "section",
+      text: {
+        type: "mrkdwn",
+        text: `*Errors (${summary.errors.length}):*\n\`\`\`${summary.errors.slice(0, 5).join("\n").slice(0, 1500)}\`\`\``,
+      },
+    });
+  }
+
+  try {
+    await axios.post(webhookUrl, payload, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 10000,
+    });
+  } catch (err: any) {
+    console.error(`[Slack] Failed to send comment-watcher summary: ${err.message}`);
+  }
+}
+
+/**
  * Send a Slack notification when the pipeline fails.
  */
 export async function notifyPipelineError(error: string): Promise<void> {

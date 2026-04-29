@@ -33,3 +33,34 @@ export function scheduleDailyJobs(
     process.exit(0);
   });
 }
+
+/**
+ * Schedule a job that runs every N minutes (instead of at a specific time).
+ * Used by the comment watcher (hourly default).
+ */
+export function scheduleIntervalJob(
+  cronExpression: string,
+  timezone: string,
+  label: string,
+  job: () => Promise<void>
+) {
+  console.log(`Scheduling interval job [${label}]: ${cronExpression} (${timezone})`);
+
+  cron.schedule(
+    cronExpression,
+    async () => {
+      console.log(`[${new Date().toISOString()}] [${label}] tick`);
+      try {
+        await job();
+      } catch (err: any) {
+        console.error(`[${new Date().toISOString()}] [${label}] job failed: ${err.message}`);
+      }
+    },
+    { timezone }
+  );
+
+  process.on("SIGINT", () => {
+    console.log(`\n${label} scheduler stopped.`);
+    process.exit(0);
+  });
+}
