@@ -2,12 +2,19 @@ import { config } from "./config";
 import { generateLinkedInPost } from "./content/generator";
 import { generateCarousel } from "./content/carousel-generator";
 import { generateLinkedInVideo } from "./content/video-generator";
-import { initDb, savePost } from "./storage/db";
+import {
+  initDb,
+  savePost,
+  getPostLeadMagnetMeta,
+  saveLeadMagnetPath,
+} from "./storage/db";
 import { scheduleDailyJobs, scheduleIntervalJob } from "./scheduler/cron";
 import { notifyPipelineError } from "./notifications/slack";
-import { sendDraftToSlack } from "./slack/send-draft";
+import { notifyPostPublished } from "./slack/post-notification";
 import { runResearch } from "./pipeline/research";
 import { runCommentWatcherOnce } from "./comment-watcher/orchestrator";
+import { publishPostToLinkedIn } from "./linkedin/publish-post";
+import { generateLeadMagnet } from "./content/lead-magnet-generator";
 
 function log(msg: string) {
   console.log(`[${new Date().toISOString()}] ${msg}`);
@@ -68,16 +75,54 @@ async function generateOnePost(
   });
   log(`Post ${index}: saved as draft #${postId}`);
 
-  await sendDraftToSlack({
-    id: postId,
+  // Auto-publish: post directly to LinkedIn (browser path), no Slack approval.
+  log(`Post ${index}: publishing draft #${postId} to LinkedIn…`);
+  const { linkedinPostId, activityId } = await publishPostToLinkedIn(postId);
+  log(`Post ${index}: published as ${linkedinPostId} (activityId=${activityId || "n/a"})`);
+
+  await notifyPostPublished({
+    postId,
     content: generated.content,
     topic: generated.topic,
+    postType,
+    linkedinPostId,
+    activityId,
     pdfData: pdfBuffer,
     videoData: videoBuffer,
-    postType,
     batchIndex: index,
     batchTotal: total,
   });
+
+  // Lead magnet: kick off async; failures are logged but don't fail the run.
+  generatePostLeadMagnet(postId).catch((e) =>
+    log(`Lead magnet generation failed for #${postId}: ${e.message}`)
+  );
+}
+
+async function generatePostLeadMagnet(postId: number): Promise<void> {
+  const meta = await getPostLeadMagnetMeta(postId);
+  if (!meta) {
+    log(`Lead magnet skipped: no metadata for post #${postId}`);
+    return;
+  }
+  const keyword = meta.ctaKeyword;
+  if (!keyword || keyword === "NONE" || keyword === "") {
+    log(`Lead magnet skipped: post #${postId} has no freebie CTA`);
+    return;
+  }
+  log(
+    `Generating lead magnet for post #${postId} (keyword: ${keyword}, title: ${
+      meta.leadMagnetTitle || "<from post>"
+    })`
+  );
+  const result = await generateLeadMagnet({
+    postContent: meta.content,
+    topic: meta.topic || keyword,
+    ctaKeyword: keyword,
+    leadMagnetTitle: meta.leadMagnetTitle || "",
+  });
+  await saveLeadMagnetPath(postId, result.pdfPath);
+  log(`Lead magnet ready at ${result.pdfPath} (${result.bytes} bytes)`);
 }
 
 async function runDailyBatch() {
@@ -128,8 +173,8 @@ switch (command) {
     break;
   case "schedule":
     log("Starting daily batch scheduler...");
-    // Batch runs once per day, generates the day's 2 drafts (video at 10 AM slot, carousel at 6:30 PM slot).
-    // Drafts go to Slack for approval. Approval triggers immediate posting (see slack/handlers).
+    // Batch runs once per day. Generates 2 posts (video + carousel), AUTO-PUBLISHES to LinkedIn,
+    // then posts a "published" notification + media to Slack. No approval step.
     const batchTime = process.env.BATCH_TIME || "08:30";
     log(`Batch generation scheduled at ${batchTime} ${config.bot.timezone}`);
     scheduleDailyJobs([batchTime], config.bot.timezone, runDailyBatch);
@@ -162,10 +207,10 @@ switch (command) {
     break;
   default:
     console.log(`
-LinkedIn Bot - Slack-based Approval
+LinkedIn Bot - Auto-publish
 
 Usage:
-  npx tsx src/index.ts run                  Generate 2 posts (video + carousel) and send to Slack
+  npx tsx src/index.ts run                  Generate 2 posts, auto-publish, notify Slack
   npx tsx src/index.ts research             Run research only
   npx tsx src/index.ts generate             Generate a single post (dry run)
   npx tsx src/index.ts schedule             Start the daily post-generation scheduler
